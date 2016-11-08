@@ -2,10 +2,86 @@
 
 #include <cassert>
 
-int main() {
-    using namespace lisp;
-    auto parser = lisp::ParseExpr();
-    std::string in("( 1 a (b))");
+template <class T>
+T Read(const std::unique_ptr<slip::Val>& v);
+
+template <>
+std::string Read<std::string>(const std::unique_ptr<slip::Val>& v) {
+    if (slip::Atom* i = dynamic_cast<slip::Atom*>(v.get())) {
+        return i->val;
+    } else if (slip::List* i = dynamic_cast<slip::List*>(v.get())) {
+        std::string fun = Read<std::string>(i->vals[0]);
+        if (fun == "to_string@int") {
+            return Read<std::string>(i->vals[1]);
+        } else if (fun == "to_string@str") {
+            return Read<std::string>(i->vals[1]);
+        }
+    }
+    throw std::runtime_error("expected an atom expression");
+}
+
+template <>
+int Read<int>(const std::unique_ptr<slip::Val>& v) {
+    if (slip::Int* i = dynamic_cast<slip::Int*>(v.get())) {
+        return i->val;
+    } else if (slip::List* i = dynamic_cast<slip::List*>(v.get())) {
+        std::string fun = Read<std::string>(i->vals[0]);
+        if (fun == "return") {
+            return Read<int>(i->vals[1]);
+        } else if (fun == "add@int@int") {
+            return Read<int>(i->vals[1]) + Read<int>(i->vals[2]);
+        }
+    }
+    throw std::runtime_error("expected an int expression");
+}
+
+class PrintVisitor : public slip::Visitor {
+    std::string res_;
+
+   public:
+    void Visit(slip::Int& x) override {
+        res_ += std::to_string(x.val) + ":int";
+    }
+    void Visit(slip::Atom& x) override { res_ += x.val + ":atom"; }
+    void Visit(slip::List& xs) override {
+        res_ += "[";
+        for (auto& x : xs.vals) {
+            x->Accept(*this);
+            res_ += " ";
+        }
+        if (res_.back() == ' ') {
+            res_.back() = ']';
+        } else {
+            res_.push_back(']');
+        }
+    }
+
+    std::string result() const { return res_; }
+};
+
+template <class T>
+void expect_eq(std::string in, std::string parse, T x) {
+    using namespace slip;
+    std::cout << in << "\n";
+    auto parser = slip::ParseExpr();
     auto res = parser(in.begin(), in.end());
-    assert(res->first->Print() == "[1:int a:atom [b:atom]]");
+    PrintVisitor pv;
+    pv(*res->first);
+    std::cout << "=> " << pv.result() << "\n";
+    assert(pv.result() == parse);
+    auto eval = Read<T>(res->first);
+    assert(eval == x);
+    std::cout << "=> " << eval << "\n";
+}
+
+int main() {
+    expect_eq("(return 1)", "[return:atom 1:int]", 1);
+    expect_eq("(return (add@int@int 1 2))",
+              "[return:atom [add@int@int:atom 1:int 2:int]]",
+              3);
+    expect_eq("(add@int@int 1 2)", "[add@int@int:atom 1:int 2:int]", 3);
+    expect_eq("(add@int@int 1 (add@int@int 1 1))",
+              "[add@int@int:atom 1:int [add@int@int:atom 1:int 1:int]]",
+              3);
+    return 0;
 }
