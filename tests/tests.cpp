@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "print.h"
 
 #include <cassert>
 
@@ -35,40 +36,15 @@ int Read<int>(const std::unique_ptr<slip::Val>& v) {
     throw std::runtime_error("expected an int expression");
 }
 
-class PrintVisitor : public slip::Visitor {
-    std::string res_;
-
-   public:
-    void Visit(slip::Int& x) override {
-        res_ += std::to_string(x.val) + ":int";
-    }
-    void Visit(slip::Atom& x) override { res_ += x.val + ":atom"; }
-    void Visit(slip::List& xs) override {
-        res_ += "[";
-        for (auto& x : xs.vals) {
-            x->Accept(*this);
-            res_ += " ";
-        }
-        if (res_.back() == ' ') {
-            res_.back() = ']';
-        } else {
-            res_.push_back(']');
-        }
-    }
-
-    std::string result() const { return res_; }
-};
-
 template <class T>
 void expect_eq(std::string in, std::string parse, T x) {
     using namespace slip;
     std::cout << in << "\n";
     auto parser = slip::ParseExpr();
     auto res = parser(in.begin(), in.end());
-    PrintVisitor pv;
-    pv(*res->first);
-    std::cout << "=> " << pv.result() << "\n";
-    assert(pv.result() == parse);
+    auto printed = slip::Print(*res->first);
+    std::cout << "=> " << printed << "\n";
+    assert(printed == parse);
     auto eval = Read<T>(res->first);
     assert(eval == x);
     std::cout << "=> " << eval << "\n";
