@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "print.h"
+#include "typecheck.h"
 
 #include <cassert>
 
@@ -50,6 +51,17 @@ void expect_eq(std::string in, std::string parse, T x) {
     std::cout << "=> " << eval << "\n";
 }
 
+void test_mangling(std::string in, std::string mangled) {
+    using namespace slip;
+    std::cout << in << "\n";
+    auto parser = slip::ParseExpr();
+    auto res = parser(in.begin(), in.end());
+    TypeCheck(*res->first);
+    auto printed = slip::Print(*res->first);
+    std::cout << "=> " << printed << "\n";
+    assert(printed == mangled);
+}
+
 int main() {
     expect_eq("(return 1)", "[return:atom 1:int]", 1);
     expect_eq("(return (add@int@int 1 2))",
@@ -59,5 +71,7 @@ int main() {
     expect_eq("(add@int@int 1 (add@int@int 1 1))",
               "[add@int@int:atom 1:int [add@int@int:atom 1:int 1:int]]",
               3);
+    test_mangling("(add 1 1)", "[add@int@int:atom 1:int 1:int]");
+    test_mangling("(add a 1)", "[add@str@int:atom a:atom 1:int]");
     return 0;
 }

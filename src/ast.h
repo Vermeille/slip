@@ -32,6 +32,17 @@ struct List : public Val {
     List(std::vector<std::unique_ptr<Val>> v) : vals(std::move(v)) {}
     List(List&&) = default;
     virtual void Accept(Visitor&) override;
+    std::string* GetFunName() const {
+        if (vals.empty()) {
+            return nullptr;
+        }
+
+        if (Atom* a = dynamic_cast<Atom*>(vals[0].get())) {
+            return &a->val;
+        } else {
+            return nullptr;
+        }
+    }
 };
 
 class Visitor {
