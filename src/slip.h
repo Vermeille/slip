@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ast.h"
-#include "context.h"
-#include "eval.h"
-#include "function-impl.h"
-#include "parser.h"
-#include "print.h"
-#include "typecheck.h"
+#include "impl/ast.h"
+#include "impl/context.h"
+#include "impl/eval.h"
+#include "impl/function-impl.h"
+#include "impl/parser.h"
+#include "impl/print.h"
+#include "impl/typecheck.h"

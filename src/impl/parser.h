@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "ast.h"
-#include "parcxx.h"
+#include "parcxx/src/parcxx.h"
 
 namespace slip {
 namespace {

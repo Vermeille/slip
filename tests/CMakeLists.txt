@@ -1,1 +1,1 @@
-add_executable(tests tests.cpp ../${sources})
+add_executable(tests ${CMAKE_SOURCE_DIR}/tests/tests.cpp ${SLIP_SOURCES})
