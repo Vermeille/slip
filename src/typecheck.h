@@ -1,87 +1,20 @@
 #pragma once
 
 #include "ast.h"
+#include "context.h"
+#include "function.h"
+#include "mangler.h"
 
 #include <map>
 #include <string>
 
 namespace slip {
-
-struct Type {
-    std::string name;
-    Type() = default;
-    Type(std::string n) : name(n) {}
-};
-
-template <class T>
-struct GetTypeId;
-
-template <>
-struct GetTypeId<int> {
-    static const Type type() { return Type("int"); }
-};
-
-template <>
-struct GetTypeId<std::string> {
-    static const Type type() { return Type("str"); }
-};
-
-template <class... Args>
-struct Mangler;
-
-template <>
-struct Mangler<> {
-    static const std::string Mangle() { return ""; }
-};
-
-template <class A, class... Args>
-struct Mangler<A, Args...> {
-    static const std::string Mangle() {
-        return "@" + GetTypeId<A>::type().name + Mangler<Args...>::Mangle();
-    }
-};
-
-template <class F>
-struct ManglerCaller : public ManglerCaller<decltype(&F::operator())> {};
-
-template <class R, class... Args>
-struct ManglerCaller<R (*)(Args...)> {
-    static const std::string Mangle() { return Mangler<Args...>::Mangle(); }
-    static const std::string Result() { return GetTypeId<R>::type(); }
-};
-
-template <class R, class C, class... Args>
-struct ManglerCaller<R (C::*)(Args...) const> {
-    static const std::string Mangle() { return Mangler<Args...>::Mangle(); }
-    static const std::string Result() { return GetTypeId<R>::type().name; }
-};
-
-struct Function {
-    std::string mangled_name;
-    Type return_type;
-};
-
-struct CompilationContext {
-    std::map<std::string, Function> functions_;
-
-    template <class F>
-    void DeclareFun(const std::string& name, F) {
-        // FIXME: the func ptr isn't stored because I can't think of a way to
-        // retrieve its type now.
-        Function f;
-        f.mangled_name = name + ManglerCaller<F>::Mangle();
-        f.return_type = ManglerCaller<F>::Result();
-        functions_[f.mangled_name] = f;
-        std::cout << "adding " << f.mangled_name << "\n";
-    }
-};
-
 class TypeChecker : public Visitor {
     Type ret_;
-    CompilationContext& ctx_;
+    Context& ctx_;
 
    public:
-    TypeChecker(CompilationContext& ctx) : ctx_(ctx) {}
+    TypeChecker(Context& ctx) : ctx_(ctx) {}
 
     void Visit(slip::Int&) override { ret_ = Type("int"); }
     void Visit(slip::Atom&) override {
@@ -105,15 +38,15 @@ class TypeChecker : public Visitor {
             *fun_name += "@" + ret_.name;
         }
 
-        auto found = ctx_.functions_.find(*fun_name);
-        if (found == ctx_.functions_.end()) {
+        auto found = ctx_.Find(*fun_name);
+        if (!found) {
             throw std::runtime_error("Can't resolve overload " + *fun_name);
         }
-        ret_ = found->second.return_type;
+        ret_ = found->return_type;
     }
 };
 
-void TypeCheck(Val& x, CompilationContext& ctx) {
+void TypeCheck(Val& x, Context& ctx) {
     TypeChecker tc(ctx);
     tc(x);
 }
