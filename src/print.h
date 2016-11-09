@@ -9,12 +9,12 @@ class PrintVisitor : public slip::Visitor {
 
    public:
     void Visit(slip::Int& x) override {
-        res_ += std::to_string(x.val) + ":int";
+        res_ += std::to_string(x.val()) + ":int";
     }
-    void Visit(slip::Atom& x) override { res_ += x.val + ":atom"; }
+    void Visit(slip::Atom& x) override { res_ += x.val() + ":atom"; }
     void Visit(slip::List& xs) override {
         res_ += "[";
-        for (auto& x : xs.vals) {
+        for (auto& x : xs) {
             x->Accept(*this);
             res_ += " ";
         }

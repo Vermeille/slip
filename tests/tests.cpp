@@ -10,13 +10,13 @@ T Read(const std::unique_ptr<slip::Val>& v);
 template <>
 std::string Read<std::string>(const std::unique_ptr<slip::Val>& v) {
     if (slip::Atom* i = dynamic_cast<slip::Atom*>(v.get())) {
-        return i->val;
+        return i->val();
     } else if (slip::List* i = dynamic_cast<slip::List*>(v.get())) {
-        std::string fun = Read<std::string>(i->vals[0]);
+        std::string fun = Read<std::string>((*i)[0]);
         if (fun == "to_string@int") {
-            return Read<std::string>(i->vals[1]);
+            return Read<std::string>((*i)[1]);
         } else if (fun == "to_string@str") {
-            return Read<std::string>(i->vals[1]);
+            return Read<std::string>((*i)[1]);
         }
     }
     throw std::runtime_error("expected an atom expression");
@@ -25,13 +25,13 @@ std::string Read<std::string>(const std::unique_ptr<slip::Val>& v) {
 template <>
 int Read<int>(const std::unique_ptr<slip::Val>& v) {
     if (slip::Int* i = dynamic_cast<slip::Int*>(v.get())) {
-        return i->val;
+        return i->val();
     } else if (slip::List* i = dynamic_cast<slip::List*>(v.get())) {
-        std::string fun = Read<std::string>(i->vals[0]);
+        std::string fun = Read<std::string>((*i)[0]);
         if (fun == "return") {
-            return Read<int>(i->vals[1]);
+            return Read<int>((*i)[1]);
         } else if (fun == "add@int@int") {
-            return Read<int>(i->vals[1]) + Read<int>(i->vals[2]);
+            return Read<int>((*i)[1]) + Read<int>((*i)[2]);
         }
     }
     throw std::runtime_error("expected an int expression");

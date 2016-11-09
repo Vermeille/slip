@@ -86,7 +86,7 @@ class TypeChecker : public Visitor {
     void Visit(slip::Int&) override { ret_ = Type("int"); }
     void Visit(slip::Atom&) override { ret_ = Type("str"); }
     void Visit(slip::List& xs) override {
-        if (xs.vals.empty()) {
+        if (xs.empty()) {
             ret_ = Type("void");
             return;
         }
@@ -97,8 +97,8 @@ class TypeChecker : public Visitor {
             return;
         }
 
-        for (size_t i = 1; i < xs.vals.size(); ++i) {
-            xs.vals[i]->Accept(*this);
+        for (size_t i = 1; i < xs.size(); ++i) {
+            xs[i]->Accept(*this);
             *fun_name += "@" + ret_.name;
         }
 
