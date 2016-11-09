@@ -1,4 +1,7 @@
 ![SLIP](https://raw.githubusercontent.com/Vermeille/slip/master/slip.jpg)
+
+/!\ Super Alpha stage, totally unusable now /!\
+
 This is a header only library that allows you to add a Lisp-ish script engine
 to your C++ programs or S-expression serialization.
 
