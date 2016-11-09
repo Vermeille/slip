@@ -19,6 +19,12 @@ auto ParseAtom() {
             return str;
         });
 }
+auto ParseStr() {
+    return (parse_char('"') >>
+            list_of(parser_pred(parse_char(), [](auto c) { return c != '"'; }))
+                << parse_char('"')) %
+           [](const auto& vec) { return std::string(&vec[0], vec.size()); };
+}
 
 template <class P>
 auto Tok(P p) {
@@ -28,9 +34,13 @@ auto Tok(P p) {
 auto ParseValue() {
     auto i_val =
         parse_uint() % [](auto i) { return std::unique_ptr<Val>(new Int(i)); };
-    auto atom = ParseAtom() %
-                [](auto&& s) { return std::unique_ptr<Val>(new Atom(s)); };
-    return (i_val | atom);
+    auto atom = ParseAtom() % [](auto&& s) {
+        return std::unique_ptr<Val>(new Atom(std::move(s)));
+    };
+    auto str = ParseStr() % [](auto&& s) {
+        return std::unique_ptr<Val>(new Str(std::move(s)));
+    };
+    return (i_val | str | atom);
 }
 }  // namespace
 

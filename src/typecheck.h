@@ -84,7 +84,10 @@ class TypeChecker : public Visitor {
     TypeChecker(CompilationContext& ctx) : ctx_(ctx) {}
 
     void Visit(slip::Int&) override { ret_ = Type("int"); }
-    void Visit(slip::Atom&) override { ret_ = Type("str"); }
+    void Visit(slip::Atom&) override {
+        throw std::runtime_error("not implemented yet");
+    }
+    void Visit(slip::Str&) override { ret_ = Type("str"); }
     void Visit(slip::List& xs) override {
         if (xs.empty()) {
             ret_ = Type("void");

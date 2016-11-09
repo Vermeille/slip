@@ -35,6 +35,18 @@ struct Atom : public Val {
     std::string val_;
 };
 
+struct Str : public Val {
+   public:
+    Str(std::string s) : val_(std::move(s)) {}
+    Str(const Str& x) = default;
+    virtual void Accept(Visitor&) override;
+    const std::string& val() const { return val_; }
+    std::string& val() { return val_; }
+
+   private:
+    std::string val_;
+};
+
 struct List : public Val {
    public:
     List(std::vector<std::unique_ptr<Val>> v) : vals_(std::move(v)) {}
@@ -68,6 +80,7 @@ class Visitor {
    public:
     virtual void Visit(Int& x) = 0;
     virtual void Visit(Atom& x) = 0;
+    virtual void Visit(Str& x) = 0;
     virtual void Visit(List& x) = 0;
     virtual void Visit(Val& x) { x.Accept(*this); }
     void operator()(Val& x) { x.Accept(*this); }
@@ -76,6 +89,7 @@ class Visitor {
 
 void Int::Accept(Visitor& v) { v.Visit(*this); }
 void Atom::Accept(Visitor& v) { v.Visit(*this); }
+void Str::Accept(Visitor& v) { v.Visit(*this); }
 void List::Accept(Visitor& v) { v.Visit(*this); }
 void Val::Accept(Visitor& v) { v.Visit(*this); }
 

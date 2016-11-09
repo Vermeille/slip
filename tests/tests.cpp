@@ -11,15 +11,19 @@ template <>
 std::string Read<std::string>(const std::unique_ptr<slip::Val>& v) {
     if (slip::Atom* i = dynamic_cast<slip::Atom*>(v.get())) {
         return i->val();
+    } else if (slip::Str* i = dynamic_cast<slip::Str*>(v.get())) {
+        return i->val();
     } else if (slip::List* i = dynamic_cast<slip::List*>(v.get())) {
         std::string fun = Read<std::string>((*i)[0]);
         if (fun == "to_string@int") {
             return Read<std::string>((*i)[1]);
         } else if (fun == "to_string@str") {
             return Read<std::string>((*i)[1]);
+        } else if (fun == "return") {
+            return Read<std::string>((*i)[1]);
         }
     }
-    throw std::runtime_error("expected an atom expression");
+    throw std::runtime_error("expected a str expression");
 }
 
 template <>
@@ -69,6 +73,8 @@ void test_mangling(std::string in, std::string mangled) {
 
 int main() {
     expect_eq("(return 1)", "[return:atom 1:int]", 1);
+    expect_eq(
+        "(return \"lol\")", "[return:atom \"lol\":str]", std::string("lol"));
     expect_eq("(return (add@int@int 1 2))",
               "[return:atom [add@int@int:atom 1:int 2:int]]",
               3);
