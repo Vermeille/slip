@@ -37,12 +37,16 @@ int Read<int>(const std::unique_ptr<slip::Val>& v) {
     throw std::runtime_error("expected an int expression");
 }
 
+auto ParseSlip(const std::string& input) {
+    static const auto parser = slip::ParseExpr();
+    return parser(input.begin(), input.end());
+}
+
 template <class T>
 void expect_eq(std::string in, std::string parse, T x) {
     using namespace slip;
     std::cout << in << "\n";
-    auto parser = slip::ParseExpr();
-    auto res = parser(in.begin(), in.end());
+    auto res = ParseSlip(in);
     auto printed = slip::Print(*res->first);
     std::cout << "=> " << printed << "\n";
     assert(printed == parse);
@@ -51,16 +55,17 @@ void expect_eq(std::string in, std::string parse, T x) {
     std::cout << "=> " << eval << "\n";
 }
 
+#if 0
 void test_mangling(std::string in, std::string mangled) {
     using namespace slip;
     std::cout << in << "\n";
-    auto parser = slip::ParseExpr();
-    auto res = parser(in.begin(), in.end());
+    auto res = ParseSlip(in);
     TypeCheck(*res->first);
     auto printed = slip::Print(*res->first);
     std::cout << "=> " << printed << "\n";
     assert(printed == mangled);
 }
+#endif
 
 int main() {
     expect_eq("(return 1)", "[return:atom 1:int]", 1);
@@ -71,7 +76,23 @@ int main() {
     expect_eq("(add@int@int 1 (add@int@int 1 1))",
               "[add@int@int:atom 1:int [add@int@int:atom 1:int 1:int]]",
               3);
+#if 0
     test_mangling("(add 1 1)", "[add@int@int:atom 1:int 1:int]");
     test_mangling("(add a 1)", "[add@str@int:atom a:atom 1:int]");
+#endif
+    slip::CompilationContext ctx;
+    for (auto& f : ctx.functions_) {
+        std::cout << f.first << "\n";
+    }
+    ctx.DeclareFun("+", [](int, int) -> int { return -1; });
+    std::string input("(+ 1 1)");
+    auto parsed = ParseSlip(input);
+    auto printed = slip::Print(*parsed->first);
+    std::cout << "=> " << printed << "\n";
+    assert(parsed);
+    TypeCheck(*parsed->first, ctx);
+    printed = slip::Print(*parsed->first);
+    std::cout << "=> " << printed << "\n";
+
     return 0;
 }
