@@ -27,60 +27,60 @@ in the script that it sends to the server. Etc.
 
 2. Include it wherever you want it.
 
-```c++
-#include "slip.h"
-```
+    ```c++
+    #include "slip.h"
+    ```
 
 3. If ya want, include dat line, but I'm not endorsing this. Put that slip
    on forever.
 
-```c++
-using namespace slip;
-```
+    ```c++
+    using namespace slip;
+    ```
 
 4. Create a Context for "compilation" and "linking". That means adding
    functions that will be available for your slip script.
 
-```c++
-slip::Context ctx;
-ctx.DeclareFun("+", [](int a, int b) -> int { return a + b; });
-ctx.DeclareFun(
-    "+", [](std::string a, std::string b) -> std::string { return a + b; });
-ctx.DeclareFun("return", [](int a) -> int { return a; });
-ctx.DeclareFun("return", [](std::string a) { return a; });
-// And so on...
-```
+    ```c++
+    slip::Context ctx;
+    ctx.DeclareFun("+", [](int a, int b) -> int { return a + b; });
+    ctx.DeclareFun(
+        "+", [](std::string a, std::string b) -> std::string { return a + b; });
+    ctx.DeclareFun("return", [](int a) -> int { return a; });
+    ctx.DeclareFun("return", [](std::string a) { return a; });
+    // And so on...
+    ```
 
-You see that you can overload any function or operator. Overload resolution
-will be done.
+    You see that you can overload any function or operator. Overload resolution
+    will be done.
 
 5. Have your script coming in somewhere.
 
-```c++
-std::string script = "(+ 1 (+ 2 3))";
-```
+    ```c++
+    std::string script = "(+ 1 (+ 2 3))";
+    ```
 
 6. Parse it.
 
-```c++
-auto res = ParseSlip(script);
-if (!res) {
-    throw std::runtime_error("Parsing failed");
-}
-```
+    ```c++
+    auto res = ParseSlip(script);
+    if (!res) {
+        throw std::runtime_error("Parsing failed");
+    }
+    ```
 
 7. Type check it and resolve overloads.
 
-```c++
-TypeCheck(*res->first, ctx);
-```
+    ```c++
+    TypeCheck(*res->first, ctx);
+    ```
 
 8. Run it and profit. Depending on the result you expect, change the
    template parameter accordingly.
 
-```c++
-auto eval = Eval<int>(*res->first, ctx);
-```
+    ```c++
+    auto eval = Eval<int>(*res->first, ctx);
+    ```
 
 
 #BUT HOW DO I...?

@@ -35,5 +35,29 @@ class Context {
                       << x.second->return_type.name << "\n";
         }
     }
+
+    void ImportBase() {
+        DeclareFun("+", [](int a, int b) -> int { return a + b; });
+        DeclareFun("*", [](int a, int b) -> int { return a * b; });
+        DeclareFun("-", [](int a, int b) -> int { return a - b; });
+        DeclareFun("%", [](int a, int b) -> int { return a % b; });
+        DeclareFun("/", [](int a, int b) -> int { return a / b; });
+
+        DeclareFun("==", [](int a, int b) -> bool { return a == b; });
+        DeclareFun("<=", [](int a, int b) -> bool { return a <= b; });
+        DeclareFun(">=", [](int a, int b) -> bool { return a >= b; });
+        DeclareFun("<", [](int a, int b) -> bool { return a < b; });
+        DeclareFun(">", [](int a, int b) -> bool { return a > b; });
+
+        DeclareFun("not", [](bool a) -> bool { return !a; });
+        DeclareFun("and", [](bool a, bool b) -> bool { return a && b; });
+        DeclareFun("or", [](bool a, bool b) -> bool { return a || b; });
+
+        DeclareFun("+", [](std::string a, std::string b) -> std::string {
+            return a + b;
+        });
+        DeclareFun("return", [](int a) -> int { return a; });
+        DeclareFun("return", [](std::string a) { return a; });
+    }
 };
 }  // namespace slip

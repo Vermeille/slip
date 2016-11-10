@@ -15,7 +15,7 @@ T Eval(const slip::Val& x, Context& ctx) {
         if (!fun) {
             throw std::runtime_error("no such function: " + funname);
         }
-        return fun->Call<typename std::decay<T>::type>(*i, ctx);
+        return fun->Call<std::decay_t<T>>(*i, ctx);
     }
     throw std::runtime_error("expected a " + GetTypeId<T>::type().name +
                              " expression");

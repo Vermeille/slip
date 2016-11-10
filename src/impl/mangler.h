@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <type_traits>
+
 namespace slip {
 struct Type {
     std::string name;
@@ -8,11 +11,16 @@ struct Type {
 };
 
 template <class T>
-struct GetTypeId : public GetTypeId<typename std::decay<T>::type> {};
+struct GetTypeId : public GetTypeId<std::decay_t<T>> {};
 
 template <>
 struct GetTypeId<int> {
     static const Type type() { return Type("int"); }
+};
+
+template <>
+struct GetTypeId<bool> {
+    static const Type type() { return Type("bool"); }
 };
 
 template <>
