@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
-SET(CMAKE_CXX_FLAGS "-std=c++14 -Wall -Wextra -march=native -O3")
+SET(CMAKE_CXX_FLAGS "-std=c++14 -Wall -Wextra -Wfatal-errors -march=native -O3")
 
 include_directories(src)
 set(SLIP_SOURCES

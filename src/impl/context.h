@@ -16,9 +16,9 @@ class Context {
     template <class F>
     void DeclareFun(std::string name, F&& f) {
         auto ptr = std::unique_ptr<Function>(
-            new FunctionImpl<typename ManglerCaller<F>::result_type>(
+            new NormalFunc<typename ManglerCaller<F>::result_type>(
                 std::move(name), std::move(f)));
-        functions_[ptr->mangled_name] = std::move(ptr);
+        functions_[ptr->mangled_name()] = std::move(ptr);
     }
 
     Function* Find(const std::string& name) const {
@@ -31,8 +31,8 @@ class Context {
 
     void Dump() const {
         for (auto& x : functions_) {
-            std::cout << x.second->mangled_name << " => "
-                      << x.second->return_type.name << "\n";
+            std::cout << x.second->mangled_name() << " => "
+                      << x.second->return_type().name() << "\n";
         }
     }
 

@@ -35,14 +35,14 @@ class TypeChecker : public Visitor {
 
         for (size_t i = 1; i < xs.size(); ++i) {
             xs[i]->Accept(*this);
-            *fun_name += "@" + ret_.name;
+            *fun_name += "@" + ret_.name();
         }
 
         auto found = ctx_.Find(*fun_name);
         if (!found) {
             throw std::runtime_error("Can't resolve overload " + *fun_name);
         }
-        ret_ = found->return_type;
+        ret_ = found->return_type();
     }
 };
 

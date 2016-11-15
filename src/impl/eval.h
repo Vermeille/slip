@@ -17,7 +17,7 @@ T Eval(const slip::Val& x, Context& ctx) {
         }
         return fun->Call<std::decay_t<T>>(*i, ctx);
     }
-    throw std::runtime_error("expected a " + GetTypeId<T>::type().name +
+    throw std::runtime_error("expected a " + GetTypeId<T>::type().name() +
                              " expression");
 }
 

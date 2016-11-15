@@ -4,10 +4,15 @@
 #include <type_traits>
 
 namespace slip {
-struct Type {
-    std::string name;
+class Type {
+   public:
     Type() = default;
-    Type(std::string n) : name(n) {}
+    Type(std::string n) : name_(n) {}
+
+    std::string name() const { return name_; }
+
+   private:
+    std::string name_;
 };
 
 template <class T>
@@ -39,7 +44,7 @@ struct Mangler<> {
 template <class A, class... Args>
 struct Mangler<A, Args...> {
     static const std::string Mangle() {
-        return "@" + GetTypeId<A>::type().name + Mangler<Args...>::Mangle();
+        return "@" + GetTypeId<A>::type().name() + Mangler<Args...>::Mangle();
     }
 };
 
@@ -58,7 +63,7 @@ struct ManglerCaller<R (*)(Args...)> {
 template <class R, class C, class... Args>
 struct ManglerCaller<R (C::*)(Args...) const> {
     static const std::string Mangle() { return Mangler<Args...>::Mangle(); }
-    static const std::string Result() { return GetTypeId<R>::type().name; }
+    static const std::string Result() { return GetTypeId<R>::type().name(); }
     typedef R result_type;
     typedef std::tuple<Args...> args_type;
     static constexpr int arity = sizeof...(Args);

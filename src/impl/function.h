@@ -8,27 +8,37 @@
 
 namespace slip {
 class Context;
-struct Function {
-    std::string mangled_name;
-    Type return_type;
-
+class Function {
+   public:
     virtual ~Function() = default;
 
     template <class R>
     R Call(const Val& x, Context& ctx) const;
 
+    const std::string& mangled_name() const { return mangled_name_; }
+    const Type& return_type() const { return return_type_; }
+
    protected:
-    Function(std::string fun, std::string ret)
-        : mangled_name(std::move(fun)), return_type(std::move(ret)) {}
+    enum class FunctionType { Normal, Special };
+
+    Function(std::string fun, std::string ret, FunctionType ty)
+        : mangled_name_(std::move(fun)),
+          return_type_(std::move(ret)),
+          type_(ty) {}
+
+   private:
+    std::string mangled_name_;
+    Type return_type_;
+    FunctionType type_;
 };
 
 template <class R>
-struct FunctionImpl : public Function {
+class NormalFunc : public Function {
    public:
     R operator()(const Val& x, Context& ctx) const { return fun_(x, ctx); }
 
     template <class F>
-    FunctionImpl(std::string name, F&& f);
+    NormalFunc(std::string name, F&& f);
 
    private:
     template <class F, std::size_t... Ns>
@@ -39,4 +49,6 @@ struct FunctionImpl : public Function {
 
     std::function<R(const Val&, Context&)> fun_;
 };
+
+class SpecialFunc : public Function {};
 }  // namespace slip
