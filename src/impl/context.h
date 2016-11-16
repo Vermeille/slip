@@ -14,50 +14,15 @@ class Context {
 
    public:
     template <class F>
-    void DeclareFun(std::string name, F&& f) {
-        auto ptr = std::unique_ptr<Function>(
-            new NormalFunc<typename ManglerCaller<F>::result_type>(
-                std::move(name), std::move(f)));
-        functions_[ptr->mangled_name()] = std::move(ptr);
-    }
+    void DeclareFun(std::string name, F&& f);
 
-    Function* Find(const std::string& name) const {
-        auto found = functions_.find(name);
-        if (found != functions_.end()) {
-            return found->second.get();
-        }
-        return nullptr;
-    }
+    template <class F>
+    void DeclareSpecial(std::string name, F&& f);
 
-    void Dump() const {
-        for (auto& x : functions_) {
-            std::cout << x.second->mangled_name() << " => "
-                      << x.second->return_type().name() << "\n";
-        }
-    }
+    Function* Find(const std::string& name) const;
 
-    void ImportBase() {
-        DeclareFun("+", [](int a, int b) -> int { return a + b; });
-        DeclareFun("*", [](int a, int b) -> int { return a * b; });
-        DeclareFun("-", [](int a, int b) -> int { return a - b; });
-        DeclareFun("%", [](int a, int b) -> int { return a % b; });
-        DeclareFun("/", [](int a, int b) -> int { return a / b; });
+    void Dump() const;
 
-        DeclareFun("==", [](int a, int b) -> bool { return a == b; });
-        DeclareFun("<=", [](int a, int b) -> bool { return a <= b; });
-        DeclareFun(">=", [](int a, int b) -> bool { return a >= b; });
-        DeclareFun("<", [](int a, int b) -> bool { return a < b; });
-        DeclareFun(">", [](int a, int b) -> bool { return a > b; });
-
-        DeclareFun("not", [](bool a) -> bool { return !a; });
-        DeclareFun("and", [](bool a, bool b) -> bool { return a && b; });
-        DeclareFun("or", [](bool a, bool b) -> bool { return a || b; });
-
-        DeclareFun("+", [](std::string a, std::string b) -> std::string {
-            return a + b;
-        });
-        DeclareFun("return", [](int a) -> int { return a; });
-        DeclareFun("return", [](std::string a) { return a; });
-    }
+    void ImportBase();
 };
 }  // namespace slip
