@@ -1,6 +1,6 @@
 #include "slip.h"
 
-#include <cassert>
+#include "impl/type.h"
 
 auto ParseSlip(const std::string& input) {
     static const auto parser = slip::ParseExpr();
@@ -22,7 +22,9 @@ void expect_eq(std::string in, std::string parse, T x, slip::Context& ctx) {
 }
 
 int main() {
-    slip::Context ctx;
+    using namespace slip;
+
+    Context ctx;
     ctx.ImportBase();
     expect_eq("(return 1)", "[return@int:atom 1:int]", 1, ctx);
     expect_eq("(return \"lol\")",
@@ -49,5 +51,31 @@ int main() {
               "[==@int@int:atom 1:int 1:int]]",
               true,
               ctx);
+
+    using namespace slip::experimental;
+    using slip::experimental::Type;
+
+    Type f1(FunctionType(AtomType("Int"), AtomType("Int")));
+    std::cout << f1.Show() << "\n";
+
+    Type fif(
+        FunctionType(AtomType("Bool"),
+                     FunctionType(AtomType("a"),
+                                  FunctionType(AtomType("a"), AtomType("a")))));
+    std::cout << fif.Show() << "\n";
+
+    try {
+        fif.Apply(AtomType("Int"));
+        assert(false);
+    } catch (...) {
+    }
+    assert(fif.Apply(AtomType("Bool")).IsValid());
+
+    auto app = fif.Apply(AtomType("Bool"));
+    std::cout << app.Show() << "\n";
+
+    app = app.Apply(FunctionType(AtomType("a"), AtomType("b")));
+    std::cout << app.Show() << "\n";
+
     return 0;
 }
