@@ -55,13 +55,13 @@ int main() {
     using namespace slip::experimental;
     using slip::experimental::Type;
 
-    Type f1(FunctionType(AtomType("Int"), AtomType("Int")));
+    Prototype f1(Arrow(ConstType("Int"), ConstType("Int")));
+    Prototype f2 = f1;
     std::cout << f1.Show() << "\n";
+    std::cout << f2.Show() << "\n";
 
-    Type fif(
-        FunctionType(AtomType("Bool"),
-                     FunctionType(AtomType("a"),
-                                  FunctionType(AtomType("a"), AtomType("a")))));
+    Prototype fif(Arrow(ConstType("Bool"),
+                        Arrow(TypeVar(1), Arrow(TypeVar(1), TypeVar(1)))));
     std::cout << fif.Show() << "\n";
 
     try {

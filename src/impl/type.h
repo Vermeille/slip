@@ -3,167 +3,193 @@
 #include <cassert>
 #include <map>
 #include <memory>
+#include <set>
 #include <sstream>
 
 namespace slip {
 namespace experimental {
 
-struct TypeBase {
-    using BoundVars = std::map<std::string, const TypeBase*>;
-    enum class From { Left, Right };
+class Namer {
+    int x_;
 
-    virtual void Show(From, std::ostream& os) const = 0;
-    virtual bool Match(const TypeBase&) const = 0;
-    virtual std::unique_ptr<TypeBase> Substitute(const BoundVars&) const = 0;
-    virtual void Bind(BoundVars&, const TypeBase&) const = 0;
-    virtual std::unique_ptr<TypeBase> Clone() const = 0;
-};
+   public:
+    Namer() : x_(0) {}
 
-struct AtomType : public TypeBase {
-    std::string nm_;
-
-    AtomType(std::string nm) : nm_(std::move(nm)) {}
-
-    virtual void Show(From, std::ostream& os) const { os << nm_; }
-
-    virtual bool Match(const TypeBase& x) const {
-        if (IsVar()) {
-            return true;
-        }
-
-        if (const AtomType* y = dynamic_cast<const AtomType*>(&x)) {
-            return y->nm_ == nm_;
-        }
-        return false;
-    }
-
-    virtual std::unique_ptr<TypeBase> Clone() const {
-        return std::make_unique<AtomType>(nm_);
-    }
-
-    bool IsVar() const { return islower(nm_[0]); }
-
-    virtual void Bind(BoundVars& vars, const TypeBase& x) const {
-        if (!IsVar()) {
-            const AtomType* y = dynamic_cast<const AtomType*>(&x);
-            assert(y && y->nm_ == nm_);
-            return;
-        }
-
-        auto inserted = vars.insert(std::make_pair(nm_, &x));
-        if (!inserted.second) {
-            throw std::runtime_error(nm_ + " already bound");
-        }
-    }
-
-    virtual std::unique_ptr<TypeBase> Substitute(const BoundVars& vars) const {
-        if (!IsVar()) {
-            return std::make_unique<AtomType>(nm_);
-        }
-
-        auto found = vars.find(nm_);
-        if (found != vars.end()) {
-            return found->second->Clone();
-        }
-
-        return Clone();
+    int NewName() {
+        ++x_;
+        return x_;
     }
 };
 
-struct FunctionType : public TypeBase {
-    std::unique_ptr<TypeBase> args_;
-    std::unique_ptr<TypeBase> ret_;
+struct TypeVisitor;
+struct ConstTypeVisitor;
 
-    FunctionType() = default;
+struct Type {
+    virtual void Accept(TypeVisitor&) = 0;
+    virtual void Accept(ConstTypeVisitor&) const = 0;
+};
+
+struct TypeVar : public Type {
+    int id_;
+
+    TypeVar(int id) : id_(id) {}
+
+    virtual void Accept(TypeVisitor&) override;
+    virtual void Accept(ConstTypeVisitor&) const override;
+};
+
+struct Arrow : public Type {
+    std::unique_ptr<Type> lhs_;
+    std::unique_ptr<Type> rhs_;
+
+    Arrow() = default;
 
     template <class T, class U>
-    FunctionType(T&& x, U&& y)
-        : args_(new T(std::forward<T>(x))), ret_(new U(std::forward<U>(y))) {}
+    Arrow(T&& x, U&& y)
+        : lhs_(new T(std::forward<T>(x))), rhs_(new U(std::forward<U>(y))) {}
 
-    virtual void Show(From f, std::ostream& os) const {
-        if (f == From::Right) {
-            os << "(";
-        }
-        args_->Show(From::Right, os);
-        os << " -> ";
-        ret_->Show(From::Left, os);
-        if (f == From::Right) {
-            os << ")";
-        }
-    }
+    Arrow(std::unique_ptr<Type>&& lhs, std::unique_ptr<Type> rhs)
+        : lhs_(std::move(lhs)), rhs_(std::move(rhs)) {}
 
-    virtual bool Match(const TypeBase& x) const {
-        if (const FunctionType* y = dynamic_cast<const FunctionType*>(&x)) {
-            return args_->Match(*y->args_) && ret_->Match(*y->ret_);
-        }
-        return false;
-    }
+    virtual void Accept(TypeVisitor&) override;
+    virtual void Accept(ConstTypeVisitor&) const override;
+};
 
-    virtual std::unique_ptr<TypeBase> Clone() const {
-        FunctionType* f = new FunctionType;
-        f->args_ = args_->Clone();
-        f->ret_ = ret_->Clone();
-        return std::unique_ptr<TypeBase>(f);
-    }
+struct ConstType : public Type {
+    std::string name_;
 
-    virtual void Bind(BoundVars& vars, const TypeBase& x) const {
-        if (const FunctionType* y = dynamic_cast<const FunctionType*>(&x)) {
-            args_->Bind(vars, *y->args_);
-            ret_->Bind(vars, *y->ret_);
-        } else {
-            throw std::runtime_error(
-                "FunctionType doesn't match with concrete");
-        }
-    }
+    ConstType(std::string str) : name_(std::move(str)) {}
 
-    virtual std::unique_ptr<TypeBase> Substitute(const BoundVars& vars) const {
-        FunctionType* f = new FunctionType;
-        f->args_ = args_->Substitute(vars);
-        f->ret_ = ret_->Substitute(vars);
-        return std::unique_ptr<TypeBase>(f);
-    }
+    virtual void Accept(TypeVisitor&) override;
+    virtual void Accept(ConstTypeVisitor&) const override;
+};
 
-    std::unique_ptr<TypeBase> Apply(const TypeBase& x) const {
-        if (!args_->Match(x)) {
-            return nullptr;
-        }
-        BoundVars vars;
-        args_->Bind(vars, x);
-        return ret_->Substitute(vars);
+struct TypeVisitor {
+    virtual void Visit(Type& tv) { tv.Accept(*this); }
+    virtual void Visit(TypeVar& tv) { tv.Accept(*this); }
+    virtual void Visit(ConstType& t) { t.Accept(*this); }
+    virtual void Visit(Arrow& arr) {
+        arr.lhs_->Accept(*this);
+        arr.rhs_->Accept(*this);
     }
 };
 
-class Type {
-   public:
-    template <class T>
-    Type(T&& x) : ty_(new T(std::forward<T>(x))) {}
+struct ConstTypeVisitor {
+    virtual void Visit(const Type& tv) { tv.Accept(*this); }
+    virtual void Visit(const TypeVar& tv) { tv.Accept(*this); }
+    virtual void Visit(const ConstType& t) { t.Accept(*this); }
+    virtual void Visit(const Arrow& arr) {
+        arr.lhs_->Accept(*this);
+        arr.rhs_->Accept(*this);
+    }
+};
 
-    template <class T>
-    Type(std::unique_ptr<T>&& ptr) : ty_(std::move(ptr)) {}
+void ConstType::Accept(TypeVisitor& vis) { vis.Visit(*this); }
+void ConstType::Accept(ConstTypeVisitor& vis) const { vis.Visit(*this); }
+void TypeVar::Accept(TypeVisitor& vis) { vis.Visit(*this); }
+void TypeVar::Accept(ConstTypeVisitor& vis) const { vis.Visit(*this); }
+void Arrow::Accept(TypeVisitor& vis) { vis.Visit(*this); }
+void Arrow::Accept(ConstTypeVisitor& vis) const { vis.Visit(*this); }
 
-    std::string Show() const {
-        std::ostringstream oss;
-        ty_->Show(TypeBase::From::Left, oss);
-        return oss.str();
-    };
+using Substitutions = std::map<int, std::unique_ptr<Type>>;
 
-    bool IsValid() const { return ty_ != nullptr; }
+struct TypeShowVisitor : public ConstTypeVisitor {
+    enum class From { Left, Right };
+    From arg_;
+    std::string res_;
 
-    Type Apply(const Type& ty) const {
-        auto fun = dynamic_cast<const FunctionType*>(ty_.get());
-        if (!fun) {
-            throw std::runtime_error(Show() + " is not a function");
-        }
-        auto res = fun->Apply(*ty.ty_);
-        if (!res) {
-            throw std::runtime_error("Something went wrong: apply " +
-                                     ty.Show() + " to " + Show());
-        }
-        return std::move(res);
+    TypeShowVisitor() : arg_(From::Left) {}
+
+    virtual void Visit(const TypeVar& tv) override {
+        res_ += "t" + std::to_string(tv.id_);
     }
 
-   private:
-    std::unique_ptr<TypeBase> ty_;
+    virtual void Visit(const ConstType& t) override { res_ += t.name_; }
+
+    virtual void Visit(const Arrow& arr) override {
+        From from = arg_;
+        if (from == From::Right) {
+            res_ += "(";
+        }
+        arg_ = From::Right;
+        arr.lhs_->Accept(*this);
+
+        res_ += " -> ";
+
+        arg_ = From::Left;
+        arr.rhs_->Accept(*this);
+        if (from == From::Right) {
+            res_ += ")";
+        }
+    }
+    const std::string& result() const { return res_; }
+};
+
+struct FindVarsVisitor : public ConstTypeVisitor {
+    std::set<int> vars_;
+    virtual void Visit(const TypeVar& tv) override { vars_.insert(tv.id_); }
+    virtual void Visit(const ConstType&) override {}
+    const std::set<int>& result() const { return vars_; }
+};
+
+struct ClonerVisitor : public ConstTypeVisitor {
+    std::unique_ptr<Type> ret_;
+
+    virtual void Visit(const TypeVar& tv) override {
+        ret_ = std::make_unique<TypeVar>(tv.id_);
+    }
+
+    virtual void Visit(const ConstType& ct) override {
+        ret_ = std::make_unique<ConstType>(ct.name_);
+    }
+
+    virtual void Visit(const Arrow& arr) override {
+        auto ptr = std::make_unique<Arrow>();
+
+        arr.lhs_->Accept(*this);
+        ptr->lhs_ = std::move(ret_);
+
+        arr.rhs_->Accept(*this);
+        ptr->rhs_ = std::move(ret_);
+
+        ret_ = std::move(ptr);
+    }
+
+    std::unique_ptr<Type> result() { return std::move(ret_); }
+};
+
+struct Prototype {
+    std::set<int> vars_;
+    std::unique_ptr<Type> type_;
+
+    Prototype(const Prototype& o) : vars_(o.vars_) {
+        ClonerVisitor cv;
+        o.type_->Accept(cv);
+        type_ = cv.result();
+    }
+
+    Prototype(std::unique_ptr<Type>&& ty) : type_(std::move(ty)) {
+        FindVarsVisitor vis;
+        type_->Accept(vis);
+        vars_ = vis.result();
+    }
+
+    Prototype(Arrow&& x)
+        : Prototype(std::make_unique<Arrow>(std::forward<Arrow>(x))) {}
+
+    std::string Show() const {
+        std::string forall;
+        if (!vars_.empty()) {
+            forall = "forall";
+            for (int i : vars_) {
+                forall += " t" + std::to_string(i);
+            }
+            forall += ". ";
+        }
+        TypeShowVisitor tsv;
+        type_->Accept(tsv);
+        return forall + tsv.result();
+    }
 };
 
 }  // namespace experimental
