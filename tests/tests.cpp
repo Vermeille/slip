@@ -1,5 +1,7 @@
 #include "slip.h"
 
+#include <iostream>
+
 #include "impl/type.h"
 
 auto ParseSlip(const std::string& input) {
@@ -56,26 +58,31 @@ int main() {
     using slip::experimental::Type;
 
     Prototype f1(Arrow(ConstType("Int"), ConstType("Int")));
-    Prototype f2 = f1;
-    std::cout << f1.Show() << "\n";
-    std::cout << f2.Show() << "\n";
+    assert(f1.Show() == "Int -> Int");
 
     Prototype fif(Arrow(ConstType("Bool"),
                         Arrow(TypeVar(1), Arrow(TypeVar(1), TypeVar(1)))));
-    std::cout << fif.Show() << "\n";
+    assert(fif.Show() == "forall t1. Bool -> t1 -> t1 -> t1");
 
     try {
-        fif.Apply(AtomType("Int"));
+        fif.Apply(Prototype(ConstType("Int")));
         assert(false);
     } catch (...) {
     }
-    assert(fif.Apply(AtomType("Bool")).IsValid());
 
-    auto app = fif.Apply(AtomType("Bool"));
-    std::cout << app.Show() << "\n";
+    auto res = fif.Apply(Prototype(ConstType("Bool")));
+    res = res.Apply(Prototype(Arrow(ConstType("Int"), ConstType("Bool"))));
+    assert(res.Show() == "(Int -> Bool) -> Int -> Bool");
 
-    app = app.Apply(FunctionType(AtomType("a"), AtomType("b")));
-    std::cout << app.Show() << "\n";
+    Prototype constf(Arrow(TypeVar(1), Arrow(TypeVar(1), TypeVar(2))));
+    Prototype a_fun(Arrow(TypeVar(3), TypeVar(4)));
+    auto applied = constf.Apply(a_fun);
+    assert(applied.Show() == "forall t2 t3 t4. (t3 -> t4) -> t2");
+
+    Prototype b_fun = a_fun;
+    Namer namer;
+    b_fun.Instantiate(namer);
+    assert(b_fun.Show() == "forall t1 t2. t1 -> t2");
 
     return 0;
 }
