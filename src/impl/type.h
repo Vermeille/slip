@@ -6,6 +6,8 @@
 #include <set>
 #include <sstream>
 
+#include "parcxx/src/parcxx.h"
+
 namespace slip {
 namespace experimental {
 
@@ -48,7 +50,7 @@ struct Arrow : public Type {
     Arrow(T&& x, U&& y)
         : lhs_(new T(std::forward<T>(x))), rhs_(new U(std::forward<U>(y))) {}
 
-    Arrow(std::unique_ptr<Type>&& lhs, std::unique_ptr<Type> rhs)
+    Arrow(std::unique_ptr<Type> lhs, std::unique_ptr<Type> rhs)
         : lhs_(std::move(lhs)), rhs_(std::move(rhs)) {}
 
     virtual void Accept(TypeVisitor&) override;
@@ -264,12 +266,13 @@ struct Prototype {
     std::set<int> vars_;
     std::unique_ptr<Type> type_;
 
-    Prototype(Prototype&& o)
-        : vars_(std::move(o.vars_)), type_(std::move(o.type_)) {}
+    Prototype() = default;
+
+    Prototype(Prototype&& o) = default;
 
     Prototype(const Prototype& o) : vars_(o.vars_) { type_ = Clone(*o.type_); }
 
-    Prototype(std::unique_ptr<Type>&& ty) : type_(std::move(ty)) {
+    Prototype(std::unique_ptr<Type> ty) : type_(std::move(ty)) {
         FindVarsVisitor vis;
         type_->Accept(vis);
         vars_ = vis.result();
@@ -332,6 +335,53 @@ struct Prototype {
         return Prototype(std::move(as_fun->rhs_));
     }
 };
+
+int LowerCaseIdToNbr(const std::string& str) {
+    int res = 0;
+    for (char c : str) {
+        res = res * 26 + (c - 'a');
+    }
+    return res;
+}
+
+template <class P>
+auto Tok(P p) {
+    return skip_while(parser_pred(parse_char(), isblank)) >> p;
+}
+
+Parser<std::unique_ptr<Type>> ParseType() {
+    auto name_to_type = [](const std::string& name) -> std::unique_ptr<Type> {
+        if (islower(name[0])) {
+            return std::make_unique<TypeVar>(LowerCaseIdToNbr(name));
+        }
+        return std::make_unique<ConstType>(name);
+    };
+
+    auto atom_type = Tok(parse_word()) % name_to_type;
+    auto paren = [](auto&& fun) {
+        return Tok(parse_char('(')) >> fun << Tok(parse_char(')'));
+    };
+    auto arrow = Tok(parse_char('-')) >> parse_char('>');
+    Parser<std::unique_ptr<Type>> fun =
+        ((atom_type | paren(recursion(fun))) & !(arrow >> recursion(fun))) %
+        [](auto&& x) -> std::unique_ptr<Type> {
+        if (!x.second) {
+            return std::move(x.first);
+        }
+        return std::make_unique<Arrow>(std::move(x.first),
+                                       std::move(*x.second));
+    };
+    return fun;
+}
+
+auto ParseType(const std::string& input) {
+    static const auto parser = slip::experimental::ParseType();
+    auto res = parser(input.begin(), input.end());
+    if (!res) {
+        return optional<slip::experimental::Prototype>();
+    }
+    return optional<Prototype>(Prototype(std::move(res->first)));
+}
 
 }  // namespace experimental
 }  // namespace slip

@@ -111,8 +111,8 @@ auto poptional(P1 p1) {
     return make_parser([=](str_iterator begin, str_iterator end) {
         auto res = p1(begin, end);
         if (res) {
-            return make_optional(
-                std::make_pair(make_optional(res->first), res->second));
+            return make_optional(std::make_pair(
+                make_optional(std::move(res->first)), res->second));
         }
         return make_optional(
             std::make_pair(optional<decltype(res->first)>(), begin));

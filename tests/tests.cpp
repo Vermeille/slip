@@ -84,5 +84,8 @@ int main() {
     b_fun.Instantiate(namer);
     assert(b_fun.Show() == "forall t1 t2. t1 -> t2");
 
+    std::cout << slip::experimental::ParseType("(Int ->a)-> Bool")->Show()
+              << "\n";
+
     return 0;
 }
