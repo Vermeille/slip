@@ -14,6 +14,14 @@ void Context::DeclareFun(std::string name, F&& f) {
 }
 
 template <class F>
+void Context::DeclareFun(std::string name, std::string type, F&& f) {
+    auto ptr = std::unique_ptr<Function>(
+        new NormalFunc<typename ManglerCaller<F>::result_type>(
+            std::move(name), std::move(type), std::move(f)));
+    functions_[ptr->mangled_name()] = std::move(ptr);
+}
+
+template <class F>
 void Context::DeclareSpecial(std::string name, std::string ty, F&& f) {
     auto ptr = std::unique_ptr<Function>(
         new SpecialFun(std::move(name), std::move(ty), std::move(f)));
@@ -37,9 +45,10 @@ void Context::Dump() const {
 
 void Context::ImportBase() {
     DeclareFun("+", [](int a, int b) -> int { return a + b; });
-    DeclareFun("+s", [](std::string a, std::string b) -> std::string {
-        return a + b;
-    });
+    DeclareFun("+s",
+               [](const std::string& a, const std::string& b) -> std::string {
+                   return a + b;
+               });
     DeclareFun("*", [](int a, int b) -> int { return a * b; });
     DeclareFun("-", [](int a, int b) -> int { return a - b; });
     DeclareFun("%", [](int a, int b) -> int { return a % b; });
@@ -64,12 +73,9 @@ void Context::ImportBase() {
                                          : Eval<boost::any>(*(*l)[3], ctx);
     });
 
-    DeclareSpecial("return", "a -> a", [](const Val& x, Context& ctx) {
-        const List* l;
-        if (!(l = dynamic_cast<const List*>(&x))) {
-            throw std::runtime_error("invalid arg to ");
-        }
-        return Eval<boost::any>(*(*l)[1], ctx);
-    });
+    DeclareFun("return", "a -> a", [](const boost::any& x) { return x; });
+    DeclareFun("const",
+               "a -> b -> a",
+               [](const boost::any& a, const boost::any&) { return a; });
 }
 }  // namespace slip

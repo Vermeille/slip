@@ -83,5 +83,15 @@ int main() {
               "[if:atom [==:atom 0:int 1:int] 42:int 666:int]",
               666,
               ctx);
+
+    expect_eq("(const (== 0 1) 42)",
+              "[const:atom [==:atom 0:int 1:int] 42:int]",
+              false,
+              ctx);
+
+    expect_eq("(const \"yolo\" 42)",
+              "[const:atom \"yolo\":str 42:int]",
+              std::string("yolo"),
+              ctx);
     return 0;
 }

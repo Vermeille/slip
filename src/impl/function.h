@@ -44,6 +44,9 @@ class NormalFunc : public Function {
     template <class F>
     NormalFunc(std::string name, F&& f);
 
+    template <class F>
+    NormalFunc(std::string name, std::string type, F&& f);
+
    private:
     template <class F, std::size_t... Ns>
     static R FunApply(F&& f,

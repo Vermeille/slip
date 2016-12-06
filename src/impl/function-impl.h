@@ -37,6 +37,17 @@ NormalFunc<R>::NormalFunc(std::string name, F&& f)
       }) {}
 
 template <class R>
+template <class F>
+NormalFunc<R>::NormalFunc(std::string name, std::string type, F&& f)
+    : Function(name, type),
+      fun_([f = std::move(f)](const Val& x, Context & ctx)->R {
+          return FunApply(f,
+                          x,
+                          ctx,
+                          std::make_index_sequence<
+                              ManglerCaller<std::decay_t<F>>::arity>());
+      }) {}
+template <class R>
 R Function::Call(const Val& x, Context& ctx) const {
     return CallImpl<R>(*this, x, ctx);
 }

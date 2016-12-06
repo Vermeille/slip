@@ -46,18 +46,18 @@ in the script that it sends to the server. Etc.
     ctx.DeclareFun("+", [](int a, int b) -> int { return a + b; });
     ctx.DeclareFun(
         "+s", [](std::string a, std::string b) -> std::string { return a + b; });
-    ctx.DeclareSpecial("return", "a -> a", [](const Val& x, Context& ctx) {
-        const List* l;
-        if (!(l = dynamic_cast<const List*>(&x))) {
-            throw std::runtime_error("invalid arg to ");
-        }
-        return Eval<boost::any>(*(*l)[1], ctx);
-    });
+    ctx.DeclareFun("return", "a -> a", [](const boost::any& x) { return x; });
+    ctx.DeclareFun("const",
+               "a -> b -> a",
+               [](const boost::any& a, const boost::any&) { return a; });
     // And so on...
     ```
 
     You CANNOT overload any function or operator. The polymorphic typing system
     prevents that. Partial application is on the way!
+
+    Make sure to explicitly type all the functions having a boost::any
+    argument. Use a ML-like format.
 
 5. Have your script coming in somewhere.
 
