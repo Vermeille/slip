@@ -46,7 +46,13 @@ in the script that it sends to the server. Etc.
     ctx.DeclareFun("+", [](int a, int b) -> int { return a + b; });
     ctx.DeclareFun(
         "+s", [](std::string a, std::string b) -> std::string { return a + b; });
-    ctx.DeclareSpecial("return", "a -> a", [](int a) -> int { return a; });
+    ctx.DeclareSpecial("return", "a -> a", [](const Val& x, Context& ctx) {
+        const List* l;
+        if (!(l = dynamic_cast<const List*>(&x))) {
+            throw std::runtime_error("invalid arg to ");
+        }
+        return Eval<boost::any>(*(*l)[1], ctx);
+    });
     // And so on...
     ```
 
