@@ -10,39 +10,40 @@
 
 namespace slip {
 class TypeChecker : public Visitor {
-    Type ret_;
+    Prototype ret_;
     Context& ctx_;
 
    public:
     TypeChecker(Context& ctx) : ctx_(ctx) {}
 
-    void Visit(slip::Int&) override { ret_ = Type("int"); }
+    void Visit(slip::Int&) override { ret_ = Prototype(ConstType("Int")); }
     void Visit(slip::Atom&) override {
         throw std::runtime_error("not implemented yet");
     }
-    void Visit(slip::Str&) override { ret_ = Type("str"); }
+    void Visit(slip::Str&) override { ret_ = Prototype(ConstType("String")); }
     void Visit(slip::List& xs) override {
         if (xs.empty()) {
-            ret_ = Type("void");
+            ret_ = Prototype(ConstType("Void"));
             return;
         }
 
         std::string* fun_name = xs.GetFunName();
         if (!fun_name) {
-            ret_ = Type("void");
+            ret_ = Prototype(ConstType("Void"));
             return;
-        }
-
-        for (size_t i = 1; i < xs.size(); ++i) {
-            xs[i]->Accept(*this);
-            *fun_name += "@" + ret_.name();
         }
 
         auto found = ctx_.Find(*fun_name);
         if (!found) {
-            throw std::runtime_error("Can't resolve overload " + *fun_name);
+            throw std::runtime_error("Can't find function " + *fun_name);
         }
-        ret_ = found->return_type();
+
+        auto ret_type = found->type();
+        for (size_t i = 1; i < xs.size(); ++i) {
+            xs[i]->Accept(*this);
+            ret_type = ret_type.Apply(ret_);
+        }
+        ret_ = ret_type;
     }
 };
 

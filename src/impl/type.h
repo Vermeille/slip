@@ -9,7 +9,6 @@
 #include "parcxx/src/parcxx.h"
 
 namespace slip {
-namespace experimental {
 
 class Namer {
     int x_;
@@ -300,7 +299,7 @@ struct Prototype {
             }
             forall += ". ";
         }
-        return forall + slip::experimental::Show(*type_);
+        return forall + ::slip::Show(*type_);
     }
 
     void Instantiate(Namer& namer) {
@@ -345,7 +344,7 @@ int LowerCaseIdToNbr(const std::string& str) {
 }
 
 template <class P>
-auto Tok(P p) {
+auto Tok2(P p) {
     return skip_while(parser_pred(parse_char(), isblank)) >> p;
 }
 
@@ -357,11 +356,11 @@ Parser<std::unique_ptr<Type>> ParseType() {
         return std::make_unique<ConstType>(name);
     };
 
-    auto atom_type = Tok(parse_word()) % name_to_type;
+    auto atom_type = Tok2(parse_word()) % name_to_type;
     auto paren = [](auto&& fun) {
-        return Tok(parse_char('(')) >> fun << Tok(parse_char(')'));
+        return Tok2(parse_char('(')) >> fun << Tok2(parse_char(')'));
     };
-    auto arrow = Tok(parse_char('-')) >> parse_char('>');
+    auto arrow = Tok2(parse_char('-')) >> parse_char('>');
     Parser<std::unique_ptr<Type>> fun =
         ((atom_type | paren(recursion(fun))) & !(arrow >> recursion(fun))) %
         [](auto&& x) -> std::unique_ptr<Type> {
@@ -375,13 +374,12 @@ Parser<std::unique_ptr<Type>> ParseType() {
 }
 
 auto ParseType(const std::string& input) {
-    static const auto parser = slip::experimental::ParseType();
+    static const auto parser = ParseType();
     auto res = parser(input.begin(), input.end());
     if (!res) {
-        return optional<slip::experimental::Prototype>();
+        return Prototype();
     }
-    return optional<Prototype>(Prototype(std::move(res->first)));
+    return Prototype(std::move(res->first));
 }
 
-}  // namespace experimental
 }  // namespace slip

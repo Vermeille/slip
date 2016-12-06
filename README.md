@@ -45,14 +45,13 @@ in the script that it sends to the server. Etc.
     slip::Context ctx;
     ctx.DeclareFun("+", [](int a, int b) -> int { return a + b; });
     ctx.DeclareFun(
-        "+", [](std::string a, std::string b) -> std::string { return a + b; });
-    ctx.DeclareFun("return", [](int a) -> int { return a; });
-    ctx.DeclareFun("return", [](std::string a) { return a; });
+        "+s", [](std::string a, std::string b) -> std::string { return a + b; });
+    ctx.DeclareSpecial("return", "a -> a", [](int a) -> int { return a; });
     // And so on...
     ```
 
-    You see that you can overload any function or operator. Overload resolution
-    will be done.
+    You CANNOT overload any function or operator. The polymorphic typing system
+    prevents that. Partial application is on the way!
 
 5. Have your script coming in somewhere.
 
@@ -69,7 +68,7 @@ in the script that it sends to the server. Etc.
     }
     ```
 
-7. Type check it and resolve overloads.
+7. Type check it and resolve types
 
     ```c++
     TypeCheck(*res->first, ctx);

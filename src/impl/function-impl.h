@@ -27,8 +27,7 @@ boost::any CallImpl<boost::any>(const Function& fun,
 template <class R>
 template <class F>
 NormalFunc<R>::NormalFunc(std::string name, F&& f)
-    : Function(name + ManglerCaller<std::decay_t<F>>::Mangle(),
-               ManglerCaller<std::decay_t<F>>::Result()),
+    : Function(name, ManglerCaller<std::decay_t<F>>::Mangle()),
       fun_([f = std::move(f)](const Val& x, Context & ctx)->R {
           return FunApply(f,
                           x,

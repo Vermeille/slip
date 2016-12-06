@@ -7,6 +7,7 @@
 
 #include "ast.h"
 #include "mangler.h"
+#include "type.h"
 
 namespace slip {
 class Context;
@@ -20,15 +21,15 @@ class Function {
     virtual boost::any operator()(const Val& x, Context& ctx) const = 0;
 
     const std::string& mangled_name() const { return mangled_name_; }
-    const Type& return_type() const { return return_type_; }
+    const Prototype& type() const { return type_; }
 
    protected:
     Function(std::string fun, std::string ret)
-        : mangled_name_(std::move(fun)), return_type_(std::move(ret)) {}
+        : mangled_name_(std::move(fun)), type_(ParseType(std::move(ret))) {}
 
    private:
     std::string mangled_name_;
-    Type return_type_;
+    Prototype type_;
 };
 
 template <class R>
@@ -56,7 +57,8 @@ class NormalFunc : public Function {
 class SpecialFun : public Function {
    public:
     template <class F>
-    SpecialFun(std::string name, F&& f) : Function(name, "BITE"), fun_(f) {}
+    SpecialFun(std::string name, std::string ty, F&& f)
+        : Function(name, std::move(ty)), fun_(f) {}
 
     virtual boost::any operator()(const Val& x, Context& ctx) const override {
         return fun_(x, ctx);

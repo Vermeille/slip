@@ -17,7 +17,7 @@ class Context {
     void DeclareFun(std::string name, F&& f);
 
     template <class F>
-    void DeclareSpecial(std::string name, F&& f);
+    void DeclareSpecial(std::string name, std::string ty, F&& f);
 
     Function* Find(const std::string& name) const;
 

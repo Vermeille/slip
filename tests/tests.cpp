@@ -28,34 +28,24 @@ int main() {
 
     Context ctx;
     ctx.ImportBase();
-    expect_eq("(return 1)", "[return@int:atom 1:int]", 1, ctx);
+    expect_eq("(return 1)", "[return:atom 1:int]", 1, ctx);
     expect_eq("(return \"lol\")",
-              "[return@str:atom \"lol\":str]",
+              "[return:atom \"lol\":str]",
               std::string("lol"),
               ctx);
-    expect_eq("(return (+ 1 2))",
-              "[return@int:atom [+@int@int:atom 1:int 2:int]]",
-              3,
-              ctx);
-    expect_eq("(+ 1 2)", "[+@int@int:atom 1:int 2:int]", 3, ctx);
-    expect_eq("(+ 1 (+ 1 1))",
-              "[+@int@int:atom 1:int [+@int@int:atom 1:int 1:int]]",
-              3,
-              ctx);
+    expect_eq("(return (+ 1 2))", "[return:atom [+:atom 1:int 2:int]]", 3, ctx);
+    expect_eq("(+ 1 2)", "[+:atom 1:int 2:int]", 3, ctx);
+    expect_eq("(+ 1 (+ 1 1))", "[+:atom 1:int [+:atom 1:int 1:int]]", 3, ctx);
 
-    expect_eq("(+ \"Werez my \" \"SLIP?\")",
-              "[+@str@str:atom \"Werez my \":str \"SLIP?\":str]",
+    expect_eq("(+s \"Werez my \" \"SLIP?\")",
+              "[+s:atom \"Werez my \":str \"SLIP?\":str]",
               std::string("Werez my SLIP?"),
               ctx);
 
     expect_eq("(and (< 2 3) (== 1 1))",
-              "[and@bool@bool:atom [<@int@int:atom 2:int 3:int] "
-              "[==@int@int:atom 1:int 1:int]]",
+              "[and:atom [<:atom 2:int 3:int] [==:atom 1:int 1:int]]",
               true,
               ctx);
-
-    using namespace slip::experimental;
-    using slip::experimental::Type;
 
     Prototype f1(Arrow(ConstType("Int"), ConstType("Int")));
     assert(f1.Show() == "Int -> Int");
@@ -84,8 +74,14 @@ int main() {
     b_fun.Instantiate(namer);
     assert(b_fun.Show() == "forall t1 t2. t1 -> t2");
 
-    std::cout << slip::experimental::ParseType("(Int ->a)-> Bool")->Show()
-              << "\n";
+    expect_eq("(if (== 1 1) 42 666)",
+              "[if:atom [==:atom 1:int 1:int] 42:int 666:int]",
+              42,
+              ctx);
 
+    expect_eq("(if (== 0 1) 42 666)",
+              "[if:atom [==:atom 0:int 1:int] 42:int 666:int]",
+              666,
+              ctx);
     return 0;
 }
