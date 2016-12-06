@@ -47,10 +47,18 @@ NormalFunc<R>::NormalFunc(std::string name, std::string type, F&& f)
                           std::make_index_sequence<
                               ManglerCaller<std::decay_t<F>>::arity>());
       }) {}
+
 template <class R>
 R Function::Call(const Val& x, Context& ctx) const {
     return CallImpl<R>(*this, x, ctx);
 }
+
+template <class F>
+using _FunArgs = typename ManglerCaller<std::decay_t<F>>::args_type;
+
+template <int N, class F>
+using _NthArg =
+    std::decay_t<decltype(std::get<N>(std::declval<_FunArgs<F>>()))>;
 
 template <class R>
 template <class F, std::size_t... Ns>
@@ -58,11 +66,8 @@ R NormalFunc<R>::FunApply(F&& f,
                           const Val& x,
                           Context& ctx,
                           std::index_sequence<Ns...>) {
-    // HAIL SATAN
-    return f(Eval<std::decay_t<decltype(std::get<Ns>(
-                 std::declval<
-                     typename ManglerCaller<std::decay_t<F>>::args_type>()))>>(
-        *dynamic_cast<const List&>(x)[Ns + 1], ctx)...);
+    return f(
+        Eval<_NthArg<Ns, F>>(*dynamic_cast<const List&>(x)[Ns + 1], ctx)...);
 }
 
 }  // namespace slip
