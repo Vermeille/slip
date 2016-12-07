@@ -26,6 +26,18 @@ struct Int : public Val {
     int val_;
 };
 
+struct Bool : public Val {
+   public:
+    Bool(int i) : val_(i) {}
+    Bool(const Bool& x) = default;
+    virtual void Accept(Visitor&) override;
+    virtual void Accept(ConstVisitor&) const override;
+    bool val() const { return val_; }
+
+   private:
+    bool val_;
+};
+
 struct Atom : public Val {
    public:
     Atom(std::string s) : val_(s) {}
@@ -85,6 +97,7 @@ struct List : public Val {
 class Visitor {
    public:
     virtual void Visit(Int& x) = 0;
+    virtual void Visit(Bool& x) = 0;
     virtual void Visit(Atom& x) = 0;
     virtual void Visit(Str& x) = 0;
     virtual void Visit(List& x) = 0;
@@ -96,6 +109,7 @@ class Visitor {
 class ConstVisitor {
    public:
     virtual void Visit(const Int& x) = 0;
+    virtual void Visit(const Bool& x) = 0;
     virtual void Visit(const Atom& x) = 0;
     virtual void Visit(const Str& x) = 0;
     virtual void Visit(const List& x) = 0;
@@ -104,12 +118,14 @@ class ConstVisitor {
     virtual ~ConstVisitor() {}
 };
 void Int::Accept(Visitor& v) { v.Visit(*this); }
+void Bool::Accept(Visitor& v) { v.Visit(*this); }
 void Atom::Accept(Visitor& v) { v.Visit(*this); }
 void Str::Accept(Visitor& v) { v.Visit(*this); }
 void List::Accept(Visitor& v) { v.Visit(*this); }
 void Val::Accept(Visitor& v) { v.Visit(*this); }
 
 void Int::Accept(ConstVisitor& v) const { v.Visit(*this); }
+void Bool::Accept(ConstVisitor& v) const { v.Visit(*this); }
 void Atom::Accept(ConstVisitor& v) const { v.Visit(*this); }
 void Str::Accept(ConstVisitor& v) const { v.Visit(*this); }
 void List::Accept(ConstVisitor& v) const { v.Visit(*this); }

@@ -10,8 +10,6 @@
 
 namespace slip {
 class Context {
-    std::map<std::string, std::unique_ptr<Function>> functions_;
-
    public:
     template <class F>
     void DeclareFun(std::string name, F&& f);
@@ -27,5 +25,8 @@ class Context {
     void Dump() const;
 
     void ImportBase();
+
+   private:
+    std::map<std::string, std::unique_ptr<Function>> functions_;
 };
 }  // namespace slip

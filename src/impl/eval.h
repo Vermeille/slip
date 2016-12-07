@@ -55,12 +55,29 @@ int Eval<int>(const slip::Val& v, Context& ctx) {
 }
 
 template <>
+bool Eval<bool>(const slip::Val& v, Context& ctx) {
+    if (const slip::Bool* i = dynamic_cast<const slip::Bool*>(&v)) {
+        return i->val();
+    } else if (const slip::List* i = dynamic_cast<const slip::List*>(&v)) {
+        std::string funname = Eval<std::string>(*(*i)[0], ctx);
+        auto fun = ctx.Find(funname);
+        if (!fun) {
+            throw std::runtime_error("no such function: " + funname);
+        }
+        return fun->Call<bool>(*i, ctx);
+    }
+    throw std::runtime_error("expected an int expression");
+}
+
+template <>
 Polymorphic Eval<Polymorphic>(const slip::Val& v, Context& ctx) {
     if (const slip::Int* i = dynamic_cast<const slip::Int*>(&v)) {
         return i->val();
     } else if (const slip::Atom* i = dynamic_cast<const slip::Atom*>(&v)) {
         return i->val();
     } else if (const slip::Str* i = dynamic_cast<const slip::Str*>(&v)) {
+        return i->val();
+    } else if (const slip::Bool* i = dynamic_cast<const slip::Bool*>(&v)) {
         return i->val();
     } else if (const slip::List* i = dynamic_cast<const slip::List*>(&v)) {
         std::string funname = Eval<std::string>(*(*i)[0], ctx);

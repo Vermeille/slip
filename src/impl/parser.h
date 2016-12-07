@@ -40,7 +40,12 @@ auto ParseValue() {
     auto str = ParseStr() % [](auto&& s) {
         return std::unique_ptr<Val>(new Str(std::move(s)));
     };
-    return (i_val | str | atom);
+    auto boolp =
+        (parse_word("true") %
+         [](const auto&) { return std::unique_ptr<Val>(new Bool(true)); }) |
+        (parse_word("false") %
+         [](const auto&) { return std::unique_ptr<Val>(new Bool(false)); });
+    return (i_val | str | boolp | atom);
 }
 }  // namespace
 

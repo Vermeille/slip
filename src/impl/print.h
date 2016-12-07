@@ -11,6 +11,9 @@ class PrintVisitor : public slip::ConstVisitor {
     void Visit(const slip::Int& x) override {
         res_ += std::to_string(x.val()) + ":int";
     }
+    void Visit(const slip::Bool& x) override {
+        res_ += std::to_string(x.val()) + ":bool";
+    }
     void Visit(const slip::Atom& x) override { res_ += x.val() + ":atom"; }
     void Visit(const slip::Str& x) override {
         res_ += "\"" + x.val() + "\":str";

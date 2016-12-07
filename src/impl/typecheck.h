@@ -17,6 +17,7 @@ class TypeChecker : public Visitor {
     TypeChecker(Context& ctx) : ctx_(ctx) {}
 
     void Visit(slip::Int&) override { ret_ = Prototype(ConstType("Int")); }
+    void Visit(slip::Bool&) override { ret_ = Prototype(ConstType("Bool")); }
     void Visit(slip::Atom&) override {
         throw std::runtime_error("not implemented yet");
     }
