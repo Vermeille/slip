@@ -46,17 +46,17 @@ in the script that it sends to the server. Etc.
     ctx.DeclareFun("+", [](int a, int b) -> int { return a + b; });
     ctx.DeclareFun(
         "+s", [](std::string a, std::string b) -> std::string { return a + b; });
-    ctx.DeclareFun("return", "a -> a", [](const boost::any& x) { return x; });
+    ctx.DeclareFun("return", "a -> a", [](const Polymorphic& x) { return x; });
     ctx.DeclareFun("const",
                "a -> b -> a",
-               [](const boost::any& a, const boost::any&) { return a; });
+               [](const Polymorphic& a, const Polymorphic&) { return a; });
     // And so on...
     ```
 
     You CANNOT overload any function or operator. The polymorphic typing system
     prevents that. Partial application is on the way!
 
-    Make sure to explicitly type all the functions having a boost::any
+    Make sure to explicitly type all the functions having a Polymorphic
     argument. Use a ML-like format.
 
 5. Have your script coming in somewhere.
