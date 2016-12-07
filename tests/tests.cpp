@@ -2,18 +2,11 @@
 
 #include <iostream>
 
-#include "impl/type.h"
-
-auto ParseSlip(const std::string& input) {
-    static const auto parser = slip::ParseExpr();
-    return parser(input.begin(), input.end());
-}
-
 template <class T>
 void expect_eq(std::string in, std::string parse, T x, slip::Context& ctx) {
     using namespace slip;
     std::cout << in << "\n";
-    auto res = ParseSlip(in);
+    auto res = Parse(in);
     TypeCheck(*res->first, ctx);
     auto printed = slip::Print(*res->first);
     std::cout << "=> " << printed << "\n";

@@ -52,4 +52,9 @@ auto ParseExpr() {
     return expr;
 }
 
+auto Parse(const std::string& input) {
+    static const auto parser = ParseExpr();
+    return parser(input.begin(), input.end());
+}
+
 }  // namespace slip
