@@ -3,10 +3,9 @@
 #include <string>
 #include <type_traits>
 
-#include <boost/any.hpp>
-
 #include "ast.h"
 #include "context.h"
+#include "polymorphic.h"
 
 namespace slip {
 template <class T>
@@ -56,7 +55,7 @@ int Eval<int>(const slip::Val& v, Context& ctx) {
 }
 
 template <>
-boost::any Eval<boost::any>(const slip::Val& v, Context& ctx) {
+Polymorphic Eval<Polymorphic>(const slip::Val& v, Context& ctx) {
     if (const slip::Int* i = dynamic_cast<const slip::Int*>(&v)) {
         return i->val();
     } else if (const slip::Atom* i = dynamic_cast<const slip::Atom*>(&v)) {
@@ -69,7 +68,7 @@ boost::any Eval<boost::any>(const slip::Val& v, Context& ctx) {
         if (!fun) {
             throw std::runtime_error("no such function: " + funname);
         }
-        return fun->Call<boost::any>(*i, ctx);
+        return fun->Call<Polymorphic>(*i, ctx);
     }
     throw std::runtime_error("expected any expression");
 }

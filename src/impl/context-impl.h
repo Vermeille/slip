@@ -1,8 +1,8 @@
 #pragma once
 
 #include "context.h"
-
 #include "eval.h"
+#include "polymorphic.h"
 
 namespace slip {
 template <class F>
@@ -69,13 +69,13 @@ void Context::ImportBase() {
         if (!(l = dynamic_cast<const List*>(&x))) {
             throw std::runtime_error("invalid arg to if");
         }
-        return Eval<bool>(*(*l)[1], ctx) ? Eval<boost::any>(*(*l)[2], ctx)
-                                         : Eval<boost::any>(*(*l)[3], ctx);
+        return Eval<bool>(*(*l)[1], ctx) ? Eval<Polymorphic>(*(*l)[2], ctx)
+                                         : Eval<Polymorphic>(*(*l)[3], ctx);
     });
 
-    DeclareFun("return", "a -> a", [](const boost::any& x) { return x; });
+    DeclareFun("return", "a -> a", [](const Polymorphic& x) { return x; });
     DeclareFun("const",
                "a -> b -> a",
-               [](const boost::any& a, const boost::any&) { return a; });
+               [](const Polymorphic& a, const Polymorphic&) { return a; });
 }
 }  // namespace slip

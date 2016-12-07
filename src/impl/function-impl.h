@@ -4,6 +4,7 @@
 
 #include "context.h"
 #include "eval.h"
+#include "polymorphic.h"
 
 namespace slip {
 
@@ -13,13 +14,13 @@ T CallImpl(const Function& fun, const Val& x, Context& ctx) {
     if (auto i = dynamic_cast<const NormalFunc<T>*>(&fun)) {
         return i->Call(x, ctx);
     }
-    return boost::any_cast<T>(fun(x, ctx));
+    return (fun(x, ctx)).as<T>();
 }
 
 template <>
-boost::any CallImpl<boost::any>(const Function& fun,
-                                const Val& x,
-                                Context& ctx) {
+Polymorphic CallImpl<Polymorphic>(const Function& fun,
+                                  const Val& x,
+                                  Context& ctx) {
     return fun(x, ctx);
 }
 }  // anon namespace
