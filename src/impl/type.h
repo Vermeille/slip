@@ -16,10 +16,7 @@ class Namer {
    public:
     Namer() : x_(0) {}
 
-    int NewName() {
-        ++x_;
-        return x_;
-    }
+    int NewName() { return x_++; }
 };
 
 struct TypeVisitor;
@@ -312,6 +309,21 @@ struct Prototype {
         }
         vars_.swap(renamed_vars);
         Substitute(subs, type_);
+    }
+
+    Prototype Substitue(int ty, const Prototype& pro) const {
+        Namer namer;
+
+        Prototype fun = *this;
+        Prototype args = pro;
+
+        fun.Instantiate(namer);
+        args.Instantiate(namer);
+
+        Substitutions subs;
+        subs[ty] = Clone(*pro.type_);
+        slip::Substitute(subs, fun.type_);
+        return Prototype(std::move(fun.type_));
     }
 
     Prototype Apply(const Prototype& pro) const {

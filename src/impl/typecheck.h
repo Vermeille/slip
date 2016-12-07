@@ -46,10 +46,18 @@ class TypeChecker : public Visitor {
         }
         ret_ = ret_type;
     }
+
+    Prototype ret() const { return ret_; }
 };
 
 void TypeCheck(Val& x, Context& ctx) {
     TypeChecker tc(ctx);
     tc(x);
+}
+
+Prototype Type(Val& x, Context& ctx) {
+    TypeChecker tc(ctx);
+    tc(x);
+    return tc.ret();
 }
 }  // namespace slip

@@ -62,12 +62,12 @@ void test_prototype() {
     Prototype constf(Arrow(TypeVar(1), Arrow(TypeVar(1), TypeVar(2))));
     Prototype a_fun(Arrow(TypeVar(3), TypeVar(4)));
     auto applied = constf.Apply(a_fun);
-    assert(applied.Show() == "forall t2 t3 t4. (t3 -> t4) -> t2");
+    assert(applied.Show() == "forall t1 t2 t3. (t2 -> t3) -> t1");
 
     Prototype b_fun = a_fun;
     Namer namer;
     b_fun.Instantiate(namer);
-    assert(b_fun.Show() == "forall t1 t2. t1 -> t2");
+    assert(b_fun.Show() == "forall t0 t1. t0 -> t1");
 }
 
 void test_polymorphic_functions() {

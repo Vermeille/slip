@@ -27,7 +27,15 @@ struct ShowOstreamImpl {
 };
 
 template <class T>
-struct PrintExpr {
+using has_show = decltype(std::declval<T>().Show());
+
+template <class T>
+struct ShowMemberImpl {
+    static std::string Show(const T& x) { return x.Show(); }
+};
+
+template <class T>
+struct PrintError {
     static std::string Show(const T& x) {
         throw std::runtime_error(std::string("No print for ") +
                                  typeid(x).name());
@@ -35,12 +43,16 @@ struct PrintExpr {
 };
 
 template <class T>
-struct Shower : public std::conditional<
-                    Detect<has_to_string, T>::value,
-                    ShowImpl<T>,
-                    typename std::conditional<Detect<has_ostream, T>::value,
-                                              ShowOstreamImpl<T>,
-                                              PrintExpr<T>>::type>::type {};
+struct Shower
+    : public std::conditional<
+          Detect<has_to_string, T>::value,
+          ShowImpl<T>,
+          typename std::conditional<
+              Detect<has_ostream, T>::value,
+              ShowOstreamImpl<T>,
+              typename std::conditional<Detect<has_show, T>::value,
+                                        ShowMemberImpl<T>,
+                                        PrintError<T>>::type>::type>::type {};
 
 namespace slip {
 class Polymorphic {
