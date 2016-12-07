@@ -87,6 +87,9 @@ in the script that it sends to the server. Etc.
     auto eval = Eval<int>(*res->first, ctx);
     ```
 
+Oh, and now you can try some few more things since we have a REPL! Find it in
+src/repl at build time!
+
 
 #BUT HOW DO I...?
 
