@@ -23,3 +23,4 @@ set(SLIP_SOURCES
     )
 
 add_subdirectory(tests)
+add_subdirectory(src)
