@@ -49,6 +49,7 @@ class NormalFunc : public Function {
    private:
     template <class F, std::size_t... Ns>
     static R FunApply(F&& f,
+                      const std::string& name,
                       const Val& x,
                       Context& ctx,
                       std::index_sequence<Ns...> ns);

@@ -29,8 +29,9 @@ template <class R>
 template <class F>
 NormalFunc<R>::NormalFunc(std::string name, F&& f)
     : Function(name, ManglerCaller<std::decay_t<F>>::Mangle()),
-      fun_([f = std::move(f)](const Val& x, Context & ctx)->R {
+      fun_([ f = std::move(f), name = name ](const Val& x, Context & ctx)->R {
           return FunApply(f,
+                          name,
                           x,
                           ctx,
                           std::make_index_sequence<
@@ -41,8 +42,9 @@ template <class R>
 template <class F>
 NormalFunc<R>::NormalFunc(std::string name, std::string type, F&& f)
     : Function(name, type),
-      fun_([f = std::move(f)](const Val& x, Context & ctx)->R {
+      fun_([ f = std::move(f), name = name ](const Val& x, Context & ctx)->R {
           return FunApply(f,
+                          name,
                           x,
                           ctx,
                           std::make_index_sequence<
@@ -64,11 +66,18 @@ using _NthArg =
 template <class R>
 template <class F, std::size_t... Ns>
 R NormalFunc<R>::FunApply(F&& f,
+                          const std::string& name,
                           const Val& x,
                           Context& ctx,
                           std::index_sequence<Ns...>) {
-    return f(
-        Eval<_NthArg<Ns, F>>(*dynamic_cast<const List&>(x)[Ns + 1], ctx)...);
+    auto* args = dynamic_cast<const List*>(&x);
+    if (!args || args->size() != sizeof...(Ns) + 1) {
+        throw std::runtime_error("Can't invoke " + name + " expected " +
+                                 std::to_string(sizeof...(Ns)) +
+                                 "arguments, got " +
+                                 std::to_string(args->size() - 1));
+    }
+    return f(Eval<_NthArg<Ns, F>>(*(*args)[Ns + 1], ctx)...);
 }
 
 }  // namespace slip
