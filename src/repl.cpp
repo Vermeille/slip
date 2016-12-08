@@ -7,10 +7,7 @@ struct slip::GetTypeId<slip::Prototype> {
     static std::string type() { return "Prototype"; }
 };
 
-int main() {
-    slip::Context ctx;
-    ctx.ImportBase();
-
+void ImportTypeFunctions(slip::Context& ctx) {
     ctx.DeclareSpecial("!type",
                        "a -> Polymorphic",
                        [](const slip::Val& x, slip::Context& ctx) {
@@ -35,6 +32,12 @@ int main() {
                        return type.Substitue(slip::LowerCaseIdToNbr(namevar),
                                              arg);
                    });
+}
+
+int main() {
+    slip::Context ctx;
+    ctx.ImportBase();
+    ImportTypeFunctions(ctx);
 
     std::string line;
     std::cout << "> ";
