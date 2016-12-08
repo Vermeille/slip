@@ -393,5 +393,4 @@ auto ParseType(const std::string& input) {
     }
     return Prototype(std::move(res->first));
 }
-
 }  // namespace slip

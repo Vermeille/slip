@@ -334,6 +334,23 @@ auto list_of(P&& p) {
     return make_parser([=](str_iterator b, str_iterator e) {
         std::vector<decltype(p(str_iterator(), str_iterator())->first)> vec;
 
+        auto res = parse_while(p, &vec, [](auto&& vecptr, auto&& x) {
+            vecptr->push_back(std::move(x));
+            return vecptr;
+        })(b, e);
+
+        if (!res) {
+            return ParserRet<decltype(vec)>();
+        }
+        return make_optional(std::make_pair(std::move(vec), res->second));
+    });
+};
+
+template <class P>
+auto list_of1(P&& p) {
+    return make_parser([=](str_iterator b, str_iterator e) {
+        std::vector<decltype(p(str_iterator(), str_iterator())->first)> vec;
+
         auto res = parse_while1(p, &vec, [](auto&& vecptr, auto&& x) {
             vecptr->push_back(std::move(x));
             return vecptr;
