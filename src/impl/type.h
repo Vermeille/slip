@@ -321,7 +321,7 @@ struct Prototype {
         args.Instantiate(namer);
 
         Substitutions subs;
-        subs[ty] = Clone(*pro.type_);
+        subs[ty] = Clone(*args.type_);
         slip::Substitute(subs, fun.type_);
         return Prototype(std::move(fun.type_));
     }
