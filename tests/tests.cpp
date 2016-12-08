@@ -54,8 +54,8 @@ void test_prototype() {
     assert(f1.Show() == "Int -> Int");
 
     Prototype fif(Arrow(ConstType("Bool"),
-                        Arrow(TypeVar(1), Arrow(TypeVar(1), TypeVar(1)))));
-    assert(fif.Show() == "forall t1. Bool -> t1 -> t1 -> t1");
+                        Arrow(TypeVar(0), Arrow(TypeVar(0), TypeVar(0)))));
+    assert(fif.Show() == "forall a. Bool -> a -> a -> a");
 
     try {
         fif.Apply(Prototype(ConstType("Int")));
@@ -70,12 +70,12 @@ void test_prototype() {
     Prototype constf(Arrow(TypeVar(1), Arrow(TypeVar(1), TypeVar(2))));
     Prototype a_fun(Arrow(TypeVar(3), TypeVar(4)));
     auto applied = constf.Apply(a_fun);
-    assert(applied.Show() == "forall t1 t2 t3. (t2 -> t3) -> t1");
+    assert(applied.Show() == "forall b c d. (c -> d) -> b");
 
     Prototype b_fun = a_fun;
     Namer namer;
     b_fun.Instantiate(namer);
-    assert(b_fun.Show() == "forall t0 t1. t0 -> t1");
+    assert(b_fun.Show() == "forall a b. a -> b");
 }
 
 void test_polymorphic_functions() {

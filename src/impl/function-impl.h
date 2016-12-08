@@ -74,7 +74,7 @@ R NormalFunc<R>::FunApply(F&& f,
     if (!args || args->size() != sizeof...(Ns) + 1) {
         throw std::runtime_error("Can't invoke " + name + " expected " +
                                  std::to_string(sizeof...(Ns)) +
-                                 "arguments, got " +
+                                 " arguments, got " +
                                  std::to_string(args->size() - 1));
     }
     return f(Eval<_NthArg<Ns, F>>(*(*args)[Ns + 1], ctx)...);

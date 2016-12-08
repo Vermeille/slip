@@ -89,15 +89,23 @@ void TypeVar::Accept(ConstTypeVisitor& vis) const { vis.Visit(*this); }
 void Arrow::Accept(TypeVisitor& vis) { vis.Visit(*this); }
 void Arrow::Accept(ConstTypeVisitor& vis) const { vis.Visit(*this); }
 
-struct TypeShowVisitor : public ConstTypeVisitor {
-    enum class From { Left, Right };
-    From arg_;
-    std::string res_;
+std::string IdToLetters(int id) {
+    std::string res;
+    res.insert(res.begin(), id % 26 + 'a');
+    id /= 26;
+    while (id) {
+        res.insert(res.begin(), id % 26 + 'a');
+        id /= 26;
+    }
+    return res;
+}
 
+class TypeShowVisitor : public ConstTypeVisitor {
+   public:
     TypeShowVisitor() : arg_(From::Left) {}
 
     virtual void Visit(const TypeVar& tv) override {
-        res_ += "t" + std::to_string(tv.id_);
+        res_ += IdToLetters(tv.id_);
     }
 
     virtual void Visit(const ConstType& t) override { res_ += t.name_; }
@@ -119,6 +127,11 @@ struct TypeShowVisitor : public ConstTypeVisitor {
         }
     }
     const std::string& result() const { return res_; }
+
+   private:
+    enum class From { Left, Right };
+    From arg_;
+    std::string res_;
 };
 
 std::string Show(const Type& ty) {
@@ -292,7 +305,7 @@ struct Prototype {
         if (!vars_.empty()) {
             forall = "forall";
             for (int i : vars_) {
-                forall += " t" + std::to_string(i);
+                forall += " " + IdToLetters(i);
             }
             forall += ". ";
         }
