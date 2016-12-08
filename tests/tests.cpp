@@ -16,6 +16,14 @@ void expect_eq(std::string in, std::string parse, T x, slip::Context& ctx) {
     std::cout << "=> " << eval << "\n";
 }
 
+void CheckType(std::string in, std::string type, slip::Context& ctx) {
+    using namespace slip;
+    std::cout << in << "\n";
+    auto res = Parse(in);
+    TypeCheck(*res->first, ctx);
+    assert(Type(*res->first, ctx).Show() == type);
+}
+
 void test_concrete_functions() {
     using namespace slip;
     Context ctx;
@@ -99,6 +107,12 @@ int main() {
     test_concrete_functions();
     test_polymorphic_functions();
     test_prototype();
+
+    using namespace slip;
+    Context ctx;
+    ctx.ImportBase();
+    CheckType("((+ 1) 2)", "Int", ctx);
+    CheckType("((if true) 42)", "Int -> Int", ctx);
 
     return 0;
 }

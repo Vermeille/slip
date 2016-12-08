@@ -13,6 +13,19 @@ class TypeChecker : public Visitor {
     Prototype ret_;
     Context& ctx_;
 
+    void GetFunctionType(slip::List& xs) {
+        std::string* fun_name = xs.GetFunName();
+        if (fun_name) {
+            auto found = ctx_.Find(*fun_name);
+            if (!found) {
+                throw std::runtime_error("Can't find function " + *fun_name);
+            }
+            ret_ = found->type();
+        } else {
+            xs[0]->Accept(*this);
+        }
+    }
+
    public:
     TypeChecker(Context& ctx) : ctx_(ctx) {}
 
@@ -28,18 +41,8 @@ class TypeChecker : public Visitor {
             return;
         }
 
-        std::string* fun_name = xs.GetFunName();
-        if (!fun_name) {
-            ret_ = Prototype(ConstType("Void"));
-            return;
-        }
-
-        auto found = ctx_.Find(*fun_name);
-        if (!found) {
-            throw std::runtime_error("Can't find function " + *fun_name);
-        }
-
-        auto ret_type = found->type();
+        GetFunctionType(xs);
+        Prototype ret_type = ret_;
         for (size_t i = 1; i < xs.size(); ++i) {
             xs[i]->Accept(*this);
             ret_type = ret_type.Apply(ret_);
