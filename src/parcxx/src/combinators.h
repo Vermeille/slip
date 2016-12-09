@@ -335,7 +335,7 @@ auto list_of(P&& p) {
         std::vector<decltype(p(str_iterator(), str_iterator())->first)> vec;
 
         auto res = parse_while(p, &vec, [](auto&& vecptr, auto&& x) {
-            vecptr->push_back(std::move(x));
+            vecptr->emplace_back(std::move(x));
             return vecptr;
         })(b, e);
 
@@ -352,7 +352,7 @@ auto list_of1(P&& p) {
         std::vector<decltype(p(str_iterator(), str_iterator())->first)> vec;
 
         auto res = parse_while1(p, &vec, [](auto&& vecptr, auto&& x) {
-            vecptr->push_back(std::move(x));
+            vecptr->emplace_back(std::move(x));
             return vecptr;
         })(b, e);
 

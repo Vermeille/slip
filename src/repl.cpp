@@ -8,15 +8,15 @@ struct slip::GetTypeId<slip::Prototype> {
 };
 
 void ImportTypeFunctions(slip::Context& ctx) {
-    ctx.DeclareSpecial("!type",
-                       "a -> Polymorphic",
-                       [](const slip::Val& x, slip::Context& ctx) {
-                           const slip::List* l;
-                           if (!(l = dynamic_cast<const slip::List*>(&x))) {
-                               throw std::runtime_error("invalid arg to if");
-                           }
-                           return slip::TypeExpression(*(*l)[1], ctx);
-                       });
+    ctx.DeclareSpecial(
+        "!type",
+        "a -> Polymorphic",
+        [](const slip::List& x, slip::Context& ctx) {
+            if (x.size() != 2) {
+                throw std::runtime_error("expected 1 arguments for !type");
+            }
+            return slip::TypeExpression(x[1], ctx);
+        });
 
     ctx.DeclareFun("parsetype",
                    [](const std::string& str) { return slip::ParseType(str); });
@@ -47,8 +47,8 @@ int main() {
             if (!res) {
                 std::cerr << "Parse error\n";
             } else {
-                TypeCheck(*res->first, ctx);
-                auto eval = slip::Eval<slip::Polymorphic>(*res->first, ctx);
+                TypeCheck(res->first, ctx);
+                auto eval = slip::Eval<slip::Polymorphic>(res->first, ctx);
                 std::cout << eval.Show() << "\n";
             }
         } catch (std::exception& e) {

@@ -64,14 +64,14 @@ void Context::ImportBase() {
     DeclareFun("and", [](bool a, bool b) -> bool { return a && b; });
     DeclareFun("or", [](bool a, bool b) -> bool { return a || b; });
 
-    DeclareSpecial("if", "Bool -> a -> a -> a", [](const Val& x, Context& ctx) {
-        const List* l;
-        if (!(l = dynamic_cast<const List*>(&x))) {
-            throw std::runtime_error("invalid arg to if");
-        }
-        return Eval<bool>(*(*l)[1], ctx) ? Eval<Polymorphic>(*(*l)[2], ctx)
-                                         : Eval<Polymorphic>(*(*l)[3], ctx);
-    });
+    DeclareSpecial(
+        "if", "Bool -> a -> a -> a", [](const List& l, Context& ctx) {
+            if (l.size() != 4) {
+                throw std::runtime_error("'if' expects 3 arguments");
+            }
+            return Eval<bool>(l[1], ctx) ? Eval<Polymorphic>(l[2], ctx)
+                                         : Eval<Polymorphic>(l[3], ctx);
+        });
 
     DeclareFun("return", "a -> a", [](const Polymorphic& x) { return x; });
     DeclareFun("const",

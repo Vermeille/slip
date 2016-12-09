@@ -4,24 +4,20 @@
 
 namespace slip {
 namespace {
-class PrintVisitor : public slip::ConstVisitor {
+class PrintVisitor : public boost::static_visitor<> {
     std::string res_;
 
    public:
-    void Visit(const slip::Int& x) override {
-        res_ += std::to_string(x.val()) + ":int";
-    }
-    void Visit(const slip::Bool& x) override {
+    void operator()(const Int& x) { res_ += std::to_string(x.val()) + ":int"; }
+    void operator()(const Bool& x) {
         res_ += std::to_string(x.val()) + ":bool";
     }
-    void Visit(const slip::Atom& x) override { res_ += x.val() + ":atom"; }
-    void Visit(const slip::Str& x) override {
-        res_ += "\"" + x.val() + "\":str";
-    }
-    void Visit(const slip::List& xs) override {
+    void operator()(const Atom& x) { res_ += x.val() + ":atom"; }
+    void operator()(const Str& x) { res_ += "\"" + x.val() + "\":str"; }
+    void operator()(const List& xs) {
         res_ += "[";
         for (auto& x : xs) {
-            x->Accept(*this);
+            boost::apply_visitor(*this, x);
             res_ += " ";
         }
         if (res_.back() == ' ') {
@@ -31,13 +27,13 @@ class PrintVisitor : public slip::ConstVisitor {
         }
     }
 
-    std::string result() const { return res_; }
+    std::string result() { return res_; }
 };
 }
 
 inline std::string Print(const Val& v) {
     PrintVisitor pv;
-    pv(v);
+    boost::apply_visitor(pv, v);
     return pv.result();
 }
 

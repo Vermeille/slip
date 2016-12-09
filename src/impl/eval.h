@@ -9,9 +9,9 @@
 
 namespace slip {
 template <class T>
-T Eval(const slip::Val& x, Context& ctx) {
-    if (const slip::List* i = dynamic_cast<const slip::List*>(&x)) {
-        std::string funname = Eval<std::string>(*(*i)[0], ctx);
+T Eval(const Val& x, Context& ctx) {
+    if (const List* i = boost::get<List>(&x)) {
+        std::string funname = Eval<std::string>((*i)[0], ctx);
         auto fun = ctx.Find(funname);
         if (!fun) {
             throw std::runtime_error("no such function: " + funname);
@@ -23,28 +23,37 @@ T Eval(const slip::Val& x, Context& ctx) {
 }
 
 template <>
-std::string Eval<std::string>(const slip::Val& v, Context& ctx) {
-    if (const slip::Atom* i = dynamic_cast<const slip::Atom*>(&v)) {
-        return i->val();
-    } else if (const slip::Str* i = dynamic_cast<const slip::Str*>(&v)) {
-        return i->val();
-    } else if (const slip::List* i = dynamic_cast<const slip::List*>(&v)) {
-        std::string funname = Eval<std::string>(*(*i)[0], ctx);
-        auto fun = ctx.Find(funname);
-        if (!fun) {
-            throw std::runtime_error("no such function: " + funname);
+std::string Eval<std::string>(const Val& v, Context& ctx) {
+    struct EvalVisitor : public boost::static_visitor<std::string> {
+        Context& ctx_;
+        EvalVisitor(Context& ctx) : ctx_(ctx) {}
+
+        std::string operator()(const Atom& a) const { return a.val(); }
+        std::string operator()(const Str& s) const { return s.val(); }
+        std::string operator()(const List& l) const {
+            std::string funname = Eval<std::string>(l[0], ctx_);
+            auto fun = ctx_.Find(funname);
+            if (!fun) {
+                throw std::runtime_error("no such function: " + funname);
+            }
+            return fun->Call<std::string>(l, ctx_);
         }
-        return fun->Call<std::string>(*i, ctx);
-    }
-    throw std::runtime_error("expected a str expression");
+        std::string operator()(const Bool&) const {
+            throw std::runtime_error("expected a str expression");
+        }
+        std::string operator()(const Int&) const {
+            throw std::runtime_error("expected a str expression");
+        }
+    } vis(ctx);
+    return boost::apply_visitor(vis, v);
 }
 
 template <>
-int Eval<int>(const slip::Val& v, Context& ctx) {
-    if (const slip::Int* i = dynamic_cast<const slip::Int*>(&v)) {
+int Eval<int>(const Val& v, Context& ctx) {
+    if (const Int* i = boost::get<Int>(&v)) {
         return i->val();
-    } else if (const slip::List* i = dynamic_cast<const slip::List*>(&v)) {
-        std::string funname = Eval<std::string>(*(*i)[0], ctx);
+    } else if (const List* i = boost::get<List>(&v)) {
+        std::string funname = Eval<std::string>((*i)[0], ctx);
         auto fun = ctx.Find(funname);
         if (!fun) {
             throw std::runtime_error("no such function: " + funname);
@@ -55,11 +64,11 @@ int Eval<int>(const slip::Val& v, Context& ctx) {
 }
 
 template <>
-bool Eval<bool>(const slip::Val& v, Context& ctx) {
-    if (const slip::Bool* i = dynamic_cast<const slip::Bool*>(&v)) {
+bool Eval<bool>(const Val& v, Context& ctx) {
+    if (const Bool* i = boost::get<Bool>(&v)) {
         return i->val();
-    } else if (const slip::List* i = dynamic_cast<const slip::List*>(&v)) {
-        std::string funname = Eval<std::string>(*(*i)[0], ctx);
+    } else if (const List* i = boost::get<List>(&v)) {
+        std::string funname = Eval<std::string>((*i)[0], ctx);
         auto fun = ctx.Find(funname);
         if (!fun) {
             throw std::runtime_error("no such function: " + funname);
@@ -70,23 +79,26 @@ bool Eval<bool>(const slip::Val& v, Context& ctx) {
 }
 
 template <>
-Polymorphic Eval<Polymorphic>(const slip::Val& v, Context& ctx) {
-    if (const slip::Int* i = dynamic_cast<const slip::Int*>(&v)) {
-        return i->val();
-    } else if (const slip::Atom* i = dynamic_cast<const slip::Atom*>(&v)) {
-        return i->val();
-    } else if (const slip::Str* i = dynamic_cast<const slip::Str*>(&v)) {
-        return i->val();
-    } else if (const slip::Bool* i = dynamic_cast<const slip::Bool*>(&v)) {
-        return i->val();
-    } else if (const slip::List* i = dynamic_cast<const slip::List*>(&v)) {
-        std::string funname = Eval<std::string>(*(*i)[0], ctx);
-        auto fun = ctx.Find(funname);
-        if (!fun) {
-            throw std::runtime_error("no such function: " + funname);
+Polymorphic Eval<Polymorphic>(const Val& v, Context& ctx) {
+    struct EvalVis : public boost::static_visitor<Polymorphic> {
+        Context& ctx_;
+        EvalVis(Context& ctx) : ctx_(ctx) {}
+
+        Polymorphic operator()(const Int& i) const { return i.val(); }
+        Polymorphic operator()(const Atom& a) const { return a.val(); }
+        Polymorphic operator()(const Str& s) const { return s.val(); }
+        Polymorphic operator()(const Bool& b) const { return b.val(); }
+
+        Polymorphic operator()(const List& i) const {
+            std::string funname = Eval<std::string>(i[0], ctx_);
+            auto fun = ctx_.Find(funname);
+            if (!fun) {
+                throw std::runtime_error("no such function: " + funname);
+            }
+            return fun->Call<Polymorphic>(i, ctx_);
         }
-        return fun->Call<Polymorphic>(*i, ctx);
-    }
-    throw std::runtime_error("expected any expression");
+    } vis(ctx);
+    // throw std::runtime_error("expected any expression");
+    return boost::apply_visitor(vis, v);
 }
 }  // namespace slip

@@ -10,7 +10,7 @@ namespace slip {
 
 namespace {
 template <class T>
-T CallImpl(const Function& fun, const Val& x, Context& ctx) {
+T CallImpl(const Function& fun, const List& x, Context& ctx) {
     if (auto i = dynamic_cast<const NormalFunc<T>*>(&fun)) {
         return i->Call(x, ctx);
     }
@@ -19,7 +19,7 @@ T CallImpl(const Function& fun, const Val& x, Context& ctx) {
 
 template <>
 Polymorphic CallImpl<Polymorphic>(const Function& fun,
-                                  const Val& x,
+                                  const List& x,
                                   Context& ctx) {
     return fun(x, ctx);
 }
@@ -29,7 +29,7 @@ template <class R>
 template <class F>
 NormalFunc<R>::NormalFunc(std::string name, F&& f)
     : Function(name, ManglerCaller<std::decay_t<F>>::Mangle()),
-      fun_([ f = std::move(f), name = name ](const Val& x, Context & ctx)->R {
+      fun_([ f = std::move(f), name = name ](const List& x, Context & ctx)->R {
           return FunApply(f,
                           name,
                           x,
@@ -42,7 +42,7 @@ template <class R>
 template <class F>
 NormalFunc<R>::NormalFunc(std::string name, std::string type, F&& f)
     : Function(name, type),
-      fun_([ f = std::move(f), name = name ](const Val& x, Context & ctx)->R {
+      fun_([ f = std::move(f), name = name ](const List& x, Context & ctx)->R {
           return FunApply(f,
                           name,
                           x,
@@ -52,7 +52,7 @@ NormalFunc<R>::NormalFunc(std::string name, std::string type, F&& f)
       }) {}
 
 template <class R>
-R Function::Call(const Val& x, Context& ctx) const {
+R Function::Call(const List& x, Context& ctx) const {
     return CallImpl<R>(*this, x, ctx);
 }
 
@@ -67,17 +67,16 @@ template <class R>
 template <class F, std::size_t... Ns>
 R NormalFunc<R>::FunApply(F&& f,
                           const std::string& name,
-                          const Val& x,
+                          const List& args,
                           Context& ctx,
                           std::index_sequence<Ns...>) {
-    auto* args = dynamic_cast<const List*>(&x);
-    if (!args || args->size() != sizeof...(Ns) + 1) {
+    if (args.size() != sizeof...(Ns) + 1) {
         throw std::runtime_error("Can't invoke " + name + " expected " +
                                  std::to_string(sizeof...(Ns)) +
                                  " arguments, got " +
-                                 std::to_string(args->size() - 1));
+                                 std::to_string(args.size() - 1));
     }
-    return f(Eval<_NthArg<Ns, F>>(*(*args)[Ns + 1], ctx)...);
+    return f(Eval<_NthArg<Ns, F>>(args[Ns + 1], ctx)...);
 }
 
 }  // namespace slip

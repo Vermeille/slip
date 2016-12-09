@@ -15,9 +15,9 @@ class Function {
     virtual ~Function() = default;
 
     template <class R>
-    R Call(const Val& x, Context& ctx) const;
+    R Call(const List& x, Context& ctx) const;
 
-    virtual Polymorphic operator()(const Val& x, Context& ctx) const = 0;
+    virtual Polymorphic operator()(const List& x, Context& ctx) const = 0;
 
     const std::string& mangled_name() const { return mangled_name_; }
     const Prototype& type() const { return type_; }
@@ -34,9 +34,9 @@ class Function {
 template <class R>
 class NormalFunc : public Function {
    public:
-    R Call(const Val& x, Context& ctx) const { return fun_(x, ctx); }
+    R Call(const List& x, Context& ctx) const { return fun_(x, ctx); }
 
-    virtual Polymorphic operator()(const Val& x, Context& ctx) const override {
+    virtual Polymorphic operator()(const List& x, Context& ctx) const override {
         return Call(x, ctx);
     }
 
@@ -50,11 +50,11 @@ class NormalFunc : public Function {
     template <class F, std::size_t... Ns>
     static R FunApply(F&& f,
                       const std::string& name,
-                      const Val& x,
+                      const List& x,
                       Context& ctx,
                       std::index_sequence<Ns...> ns);
 
-    std::function<R(const Val&, Context&)> fun_;
+    std::function<R(const List&, Context&)> fun_;
 };
 
 class SpecialFun : public Function {
@@ -63,11 +63,11 @@ class SpecialFun : public Function {
     SpecialFun(std::string name, std::string ty, F&& f)
         : Function(name, std::move(ty)), fun_(f) {}
 
-    virtual Polymorphic operator()(const Val& x, Context& ctx) const override {
+    virtual Polymorphic operator()(const List& x, Context& ctx) const override {
         return fun_(x, ctx);
     }
 
    private:
-    std::function<Polymorphic(const Val&, Context&)> fun_;
+    std::function<Polymorphic(const List&, Context&)> fun_;
 };
 }  // namespace slip

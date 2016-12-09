@@ -7,11 +7,11 @@ void expect_eq(std::string in, std::string parse, T x, slip::Context& ctx) {
     using namespace slip;
     std::cout << in << "\n";
     auto res = Parse(in);
-    TypeCheck(*res->first, ctx);
-    auto printed = slip::Print(*res->first);
+    TypeCheck(res->first, ctx);
+    auto printed = slip::Print(res->first);
     std::cout << "=> " << printed << "\n";
     assert(printed == parse);
-    auto eval = Eval<std::decay_t<T>>(*res->first, ctx);
+    auto eval = Eval<std::decay_t<T>>(res->first, ctx);
     assert(eval == x);
     std::cout << "=> " << eval << "\n";
 }
@@ -20,8 +20,8 @@ void CheckType(std::string in, std::string type, slip::Context& ctx) {
     using namespace slip;
     std::cout << in << "\n";
     auto res = Parse(in);
-    TypeCheck(*res->first, ctx);
-    assert(TypeExpression(*res->first, ctx).Show() == type);
+    TypeCheck(res->first, ctx);
+    assert(TypeExpression(res->first, ctx).Show() == type);
 }
 
 void test_concrete_functions() {

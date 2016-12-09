@@ -9,58 +9,51 @@
 #include <string>
 
 namespace slip {
-class TypeChecker : public Visitor {
-    Prototype ret_;
+class TypeChecker : public boost::static_visitor<Prototype> {
     Context& ctx_;
 
-    void GetFunctionType(slip::List& xs) {
-        std::string* fun_name = xs.GetFunName();
+    Prototype GetFunctionType(const List& xs) {
+        const std::string* fun_name = xs.GetFunName();
         if (fun_name) {
             auto found = ctx_.Find(*fun_name);
             if (!found) {
                 throw std::runtime_error("Can't find function " + *fun_name);
             }
-            ret_ = found->type();
+            return found->type();
         } else {
-            xs[0]->Accept(*this);
+            return boost::apply_visitor(*this, xs[0]);
         }
     }
 
    public:
     TypeChecker(Context& ctx) : ctx_(ctx) {}
 
-    void Visit(slip::Int&) override { ret_ = Prototype(ConstType("Int")); }
-    void Visit(slip::Bool&) override { ret_ = Prototype(ConstType("Bool")); }
-    void Visit(slip::Atom&) override {
+    Prototype operator()(const Int&) { return Prototype(ConstType("Int")); }
+    Prototype operator()(const Bool&) { return Prototype(ConstType("Bool")); }
+    Prototype operator()(const Atom&) {
         throw std::runtime_error("not implemented yet");
     }
-    void Visit(slip::Str&) override { ret_ = Prototype(ConstType("String")); }
-    void Visit(slip::List& xs) override {
+    Prototype operator()(const Str&) { return Prototype(ConstType("String")); }
+    Prototype operator()(const List& xs) {
         if (xs.empty()) {
-            ret_ = Prototype(ConstType("Void"));
-            return;
+            return Prototype(ConstType("Void"));
         }
 
-        GetFunctionType(xs);
-        Prototype ret_type = ret_;
+        Prototype ret_type = GetFunctionType(xs);
         for (size_t i = 1; i < xs.size(); ++i) {
-            xs[i]->Accept(*this);
-            ret_type = ret_type.Apply(ret_);
+            ret_type = ret_type.Apply(boost::apply_visitor(*this, xs[i]));
         }
-        ret_ = ret_type;
+        return ret_type;
     }
-
-    Prototype ret() const { return ret_; }
 };
 
 void TypeCheck(Val& x, Context& ctx) {
     TypeChecker tc(ctx);
-    tc(x);
+    boost::apply_visitor(tc, x);
 }
 
-Prototype TypeExpression(Val& x, Context& ctx) {
+Prototype TypeExpression(const Val& x, Context& ctx) {
     TypeChecker tc(ctx);
-    tc(x);
-    return tc.ret();
+    return boost::apply_visitor(tc, x);
 }
 }  // namespace slip
