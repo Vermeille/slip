@@ -15,7 +15,7 @@ void ImportTypeFunctions(slip::Context& ctx) {
                            if (!(l = dynamic_cast<const slip::List*>(&x))) {
                                throw std::runtime_error("invalid arg to if");
                            }
-                           return slip::Type(*(*l)[1], ctx);
+                           return slip::TypeExpression(*(*l)[1], ctx);
                        });
 
     ctx.DeclareFun("parsetype",

@@ -21,7 +21,7 @@ void CheckType(std::string in, std::string type, slip::Context& ctx) {
     std::cout << in << "\n";
     auto res = Parse(in);
     TypeCheck(*res->first, ctx);
-    assert(Type(*res->first, ctx).Show() == type);
+    assert(TypeExpression(*res->first, ctx).Show() == type);
 }
 
 void test_concrete_functions() {

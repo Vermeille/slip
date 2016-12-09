@@ -58,7 +58,7 @@ void TypeCheck(Val& x, Context& ctx) {
     tc(x);
 }
 
-Prototype Type(Val& x, Context& ctx) {
+Prototype TypeExpression(Val& x, Context& ctx) {
     TypeChecker tc(ctx);
     tc(x);
     return tc.ret();
