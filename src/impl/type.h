@@ -215,17 +215,27 @@ void Substitute(const Substitutions& subs, Type& ty) {
     boost::apply_visitor(vis, ty);
 }
 
-struct Prototype {
-    std::set<int> vars_;
-    Type type_;
+int GetArity(const Type& x) {
+    struct ArityVisitor : public boost::static_visitor<int> {
+        int operator()(const ConstType&) const { return 0; }
+        int operator()(const TypeVar&) const { return 0; }
+        int operator()(const Arrow& a) const {
+            return 1 + boost::apply_visitor(*this, a.rhs());
+        }
+    } vis;
+    return boost::apply_visitor(vis, x);
+}
 
+class Prototype {
+   public:
     Prototype() = default;
 
     Prototype(Prototype&& o) = default;
 
-    Prototype(const Prototype& o) : vars_(o.vars_) { type_ = o.type_; }
+    Prototype(const Prototype& o)
+        : vars_(o.vars_), type_(o.type_), arity_(o.arity_) {}
 
-    Prototype(Type ty) : type_(std::move(ty)) {
+    Prototype(Type ty) : type_(std::move(ty)), arity_(GetArity(type_)) {
         FindVarsVisitor vis;
         boost::apply_visitor(vis, type_);
         vars_ = vis.result();
@@ -294,6 +304,13 @@ struct Prototype {
     }
 
     bool IsFunction() const { return boost::get<Arrow>(&type_) != nullptr; }
+
+    int arity() const { return arity_; }
+
+   private:
+    std::set<int> vars_;
+    Type type_;
+    int arity_;
 };
 
 int LowerCaseIdToNbr(const std::string& str) {

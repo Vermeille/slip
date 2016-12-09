@@ -22,6 +22,8 @@ class Function {
     const std::string& mangled_name() const { return mangled_name_; }
     const Prototype& type() const { return type_; }
 
+    int arity() const { return type_.arity(); }
+
    protected:
     Function(std::string fun, std::string ret)
         : mangled_name_(std::move(fun)), type_(ParseType(std::move(ret))) {}
