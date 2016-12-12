@@ -61,6 +61,8 @@ class Polymorphic {
     Polymorphic(T x)
         : value_(std::make_unique<Polymorphic_<T>>(std::move(x))) {}
 
+    Polymorphic() = default;
+
     template <class T>
     std::enable_if_t<std::is_pointer<T>::value, T> as() const;
 
@@ -72,6 +74,8 @@ class Polymorphic {
     Polymorphic(Polymorphic&& x) : value_(std::move(x.value_)) {}
 
     std::string Show() { return value_->Show(); }
+
+    Polymorphic& operator=(Polymorphic&&) = default;
 
    private:
     class PolymorphBase {

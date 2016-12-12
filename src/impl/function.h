@@ -4,6 +4,7 @@
 #include <string>
 
 #include "ast.h"
+#include "closure.h"
 #include "mangler.h"
 #include "polymorphic.h"
 #include "type.h"
@@ -14,15 +15,10 @@ class Function {
    public:
     virtual ~Function() = default;
 
-    template <class R>
-    R Call(const List& x, Context& ctx) const;
-
-    virtual Polymorphic operator()(const List& x, Context& ctx) const = 0;
-
     const std::string& mangled_name() const { return mangled_name_; }
     const Prototype& type() const { return type_; }
 
-    int arity() const { return type_.arity(); }
+    virtual Closure GetClosure() = 0;
 
    protected:
     Function(std::string fun, std::string ret)
@@ -33,43 +29,27 @@ class Function {
     Prototype type_;
 };
 
-template <class R>
+template <class F>
 class NormalFunc : public Function {
    public:
-    R Call(const List& x, Context& ctx) const { return fun_(x, ctx); }
-
-    virtual Polymorphic operator()(const List& x, Context& ctx) const override {
-        return Call(x, ctx);
-    }
-
-    template <class F>
     NormalFunc(std::string name, F&& f);
-
-    template <class F>
     NormalFunc(std::string name, std::string type, F&& f);
 
-   private:
-    template <class F, std::size_t... Ns>
-    static R FunApply(F&& f,
-                      const std::string& name,
-                      const List& x,
-                      Context& ctx,
-                      std::index_sequence<Ns...> ns);
+    Closure GetClosure() override { return Closure(fun_); }
 
-    std::function<R(const List&, Context&)> fun_;
+   private:
+    F&& fun_;
 };
 
+#if 0
 class SpecialFun : public Function {
    public:
     template <class F>
     SpecialFun(std::string name, std::string ty, F&& f)
         : Function(name, std::move(ty)), fun_(f) {}
 
-    virtual Polymorphic operator()(const List& x, Context& ctx) const override {
-        return fun_(x, ctx);
-    }
-
    private:
     std::function<Polymorphic(const List&, Context&)> fun_;
 };
+#endif
 }  // namespace slip

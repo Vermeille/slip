@@ -40,7 +40,14 @@ struct Mangler<A, Args...> {
 };
 
 template <class F>
-struct ManglerCaller : public ManglerCaller<decltype(&F::operator())> {};
+struct ManglerCaller : public ManglerCaller<decltype(&F::operator())> {
+    using Impl = ManglerCaller<decltype(&F::operator())>;
+    static const std::string Mangle() { return Impl::Mangle(); }
+    static const std::string Result() { return Impl::Result(); }
+    using result_type = typename Impl::result_type;
+    using args_type = typename Impl::args_type;
+    static constexpr int arity = Impl::arity;
+};
 
 template <class R, class... Args>
 struct ManglerCaller<R (*)(Args...)> {
@@ -60,7 +67,7 @@ struct ManglerCaller<R (C::*)(Args...) const> {
     }
     static const std::string Result() { return GetTypeId<R>::type(); }
     typedef R result_type;
-    typedef std::tuple<Args...> args_type;
+    typedef std::tuple<std::decay_t<Args>...> args_type;
     static constexpr int arity = sizeof...(Args);
 };
 }  // namespace slip

@@ -8,6 +8,7 @@ set(SLIP_SOURCES
     ${CMAKE_SOURCE_DIR}/src/parcxx/src/optional.h
     ${CMAKE_SOURCE_DIR}/src/slip.h
     ${CMAKE_SOURCE_DIR}/src/impl/ast.h
+    ${CMAKE_SOURCE_DIR}/src/impl/closure.h
     ${CMAKE_SOURCE_DIR}/src/impl/context.h
     ${CMAKE_SOURCE_DIR}/src/impl/context-impl.h
     ${CMAKE_SOURCE_DIR}/src/impl/detect_trait.h

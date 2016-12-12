@@ -1,27 +1,30 @@
+#pragma once
+
 #include <utility>
 
 #include "ast.h"
-#include "context.h"
-#include "eval.h"
 #include "mangler.h"
+#include "polymorphic.h"
 
 namespace slip {
 template <int>
 class Number {};
 
+class Context;
+
 template <class T>
 T Eval(const Val& x, Context& ctx);
 
-template <class R>
 class ClosureBase {
+   public:
     virtual void Apply(const Val& x, Context& ctx) = 0;
-    virtual R GetResult() const override = 0;
+    virtual Polymorphic GetResult() const = 0;
 };
 
 template <class F>
-class ClosureImpl : public ClosureBase<std::result_of_t<F>> {
+class ClosureImpl : public ClosureBase {
    public:
-    virtual std::result_of_t<F> GetResult() const override {
+    virtual Polymorphic GetResult() const override {
         if (filled_args_ != arity_) {
             throw std::runtime_error(std::to_string(filled_args_) +
                                      " arguments provided, but " +
@@ -40,7 +43,7 @@ class ClosureImpl : public ClosureBase<std::result_of_t<F>> {
     ClosureImpl(F&& f) : f_(std::move(f)) {}
 
    private:
-    static constexpr int arity_ = Mangler<F>::arity;
+    static constexpr int arity_ = ManglerCaller<std::decay_t<F>>::arity;
 
     template <int N>
     void ApplyImpl(const Val& x, Context& ctx, Number<N>) {
@@ -49,7 +52,7 @@ class ClosureImpl : public ClosureBase<std::result_of_t<F>> {
                 Eval<typename std::tuple_element<N, decltype(args_)>::type>(
                     x, ctx);
         } else {
-            app_(x, Number<N + 1>());
+            ApplyImpl(x, ctx, Number<N + 1>());
         }
     }
 
@@ -57,10 +60,10 @@ class ClosureImpl : public ClosureBase<std::result_of_t<F>> {
         throw std::runtime_error("No more remaining unfilled arguments");
     }
 
-    using args_type = typename Mangler<F>::args_type;
+    using args_type = typename ManglerCaller<std::decay_t<F>>::args_type;
 
     template <size_t... Ns>
-    auto Call(std::index_sequence<Ns...>) {
+    auto Call(std::index_sequence<Ns...>) const {
         return f_(std::get<Ns>(args_)...);
     }
 
@@ -69,18 +72,22 @@ class ClosureImpl : public ClosureBase<std::result_of_t<F>> {
     int filled_args_ = 0;
 };
 
-template <class R>
 class Closure {
    public:
     template <class F>
-    Closure(F&& f) : base_(new ClosureImpl<F>(std::move(f))) {}
+    Closure(F&& f) : base_(new ClosureImpl<std::decay_t<F>>(std::move(f))) {}
 
     void Apply(const Val& x, Context& ctx) { return base_->Apply(x, ctx); }
 
-    R GetResult() const { return base_->GetResult(); }
+    template <class R>
+    R GetResult() const {
+        return base_->GetResult().as<R>();
+    }
+
+    Polymorphic GetResult() const { return base_->GetResult(); }
 
    private:
-    std::unique_ptr<ClosureBase<R>> base_;
+    std::unique_ptr<ClosureBase> base_;
 };
 
 }  // namespace slip

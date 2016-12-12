@@ -4,22 +4,48 @@
 #include <type_traits>
 
 #include "ast.h"
+#include "closure.h"
 #include "context.h"
 #include "polymorphic.h"
 
 namespace slip {
+void ApplyOnArgs(Closure& fun, const List& xs, Context& ctx) {
+    for (size_t i = 1; i < xs.size(); ++i) {
+        fun.Apply(xs[i], ctx);
+    }
+}
+
+template <class T>
+T Eval(const Val& x, Context& ctx);
+template <>
+std::string Eval<std::string>(const Val& v, Context& ctx);
+
 template <class T>
 T Eval(const Val& x, Context& ctx) {
     if (const List* i = boost::get<List>(&x)) {
-        std::string funname = Eval<std::string>((*i)[0], ctx);
+        Closure fun = Eval<Closure>((*i)[0], ctx);
+        ApplyOnArgs(fun, *i, ctx);
+        return fun.GetResult<T>();
+    }
+    throw std::runtime_error("expected a " + GetTypeId<T>::type() +
+                             " expression");
+}
+
+template <>
+Closure Eval<Closure>(const Val& x, Context& ctx) {
+    if (const Atom* i = boost::get<Atom>(&x)) {
+        std::string funname = Eval<std::string>(*i, ctx);
         auto fun = ctx.Find(funname);
         if (!fun) {
             throw std::runtime_error("no such function: " + funname);
         }
-        return fun->Call<std::decay_t<T>>(*i, ctx);
+        return fun->GetClosure();
+    } else if (const List* l = boost::get<List>(&x)) {
+        Closure fun = Eval<Closure>((*l)[0], ctx);
+        ApplyOnArgs(fun, *l, ctx);
+        return fun;
     }
-    throw std::runtime_error("expected a " + GetTypeId<T>::type() +
-                             " expression");
+    throw std::runtime_error("Expected a closure");
 }
 
 template <>
@@ -31,12 +57,9 @@ std::string Eval<std::string>(const Val& v, Context& ctx) {
         std::string operator()(const Atom& a) const { return a.val(); }
         std::string operator()(const Str& s) const { return s.val(); }
         std::string operator()(const List& l) const {
-            std::string funname = Eval<std::string>(l[0], ctx_);
-            auto fun = ctx_.Find(funname);
-            if (!fun) {
-                throw std::runtime_error("no such function: " + funname);
-            }
-            return fun->Call<std::string>(l, ctx_);
+            Closure fun = Eval<Closure>(l[0], ctx_);
+            ApplyOnArgs(fun, l, ctx_);
+            return fun.GetResult<std::string>();
         }
         std::string operator()(const Bool&) const {
             throw std::runtime_error("expected a str expression");
@@ -53,12 +76,9 @@ int Eval<int>(const Val& v, Context& ctx) {
     if (const Int* i = boost::get<Int>(&v)) {
         return i->val();
     } else if (const List* i = boost::get<List>(&v)) {
-        std::string funname = Eval<std::string>((*i)[0], ctx);
-        auto fun = ctx.Find(funname);
-        if (!fun) {
-            throw std::runtime_error("no such function: " + funname);
-        }
-        return fun->Call<int>(*i, ctx);
+        Closure fun = Eval<Closure>((*i)[0], ctx);
+        ApplyOnArgs(fun, *i, ctx);
+        return fun.GetResult<int>();
     }
     throw std::runtime_error("expected an int expression");
 }
@@ -68,12 +88,8 @@ bool Eval<bool>(const Val& v, Context& ctx) {
     if (const Bool* i = boost::get<Bool>(&v)) {
         return i->val();
     } else if (const List* i = boost::get<List>(&v)) {
-        std::string funname = Eval<std::string>((*i)[0], ctx);
-        auto fun = ctx.Find(funname);
-        if (!fun) {
-            throw std::runtime_error("no such function: " + funname);
-        }
-        return fun->Call<bool>(*i, ctx);
+        Closure fun = Eval<Closure>((*i)[0], ctx);
+        return fun.GetResult<bool>();
     }
     throw std::runtime_error("expected an int expression");
 }
@@ -90,15 +106,11 @@ Polymorphic Eval<Polymorphic>(const Val& v, Context& ctx) {
         Polymorphic operator()(const Bool& b) const { return b.val(); }
 
         Polymorphic operator()(const List& i) const {
-            std::string funname = Eval<std::string>(i[0], ctx_);
-            auto fun = ctx_.Find(funname);
-            if (!fun) {
-                throw std::runtime_error("no such function: " + funname);
-            }
-            return fun->Call<Polymorphic>(i, ctx_);
+            Closure fun = Eval<Closure>(i[0], ctx_);
+            ApplyOnArgs(fun, i, ctx_);
+            return fun.GetResult();
         }
     } vis(ctx);
-    // throw std::runtime_error("expected any expression");
     return boost::apply_visitor(vis, v);
 }
 }  // namespace slip
