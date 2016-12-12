@@ -56,7 +56,7 @@ struct ManglerCaller<R (*)(Args...)> {
     }
     static const std::string Result() { return GetTypeId<R>::type(); }
     typedef R result_type;
-    typedef std::tuple<Args...> args_type;
+    typedef std::tuple<std::decay_t<Args>...> args_type;
     static constexpr int arity = sizeof...(Args);
 };
 

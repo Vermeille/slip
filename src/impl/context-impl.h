@@ -21,11 +21,9 @@ void Context::DeclareFun(std::string name, std::string type, F&& f) {
 
 template <class F>
 void Context::DeclareSpecial(std::string name, std::string ty, F&& f) {
-#if 0
     auto ptr = std::unique_ptr<Function>(
-        new SpecialFun(std::move(name), std::move(ty), std::move(f)));
+        new SpecialFun<F>(std::move(name), std::move(ty), std::move(f)));
     functions_[ptr->mangled_name()] = std::move(ptr);
-#endif
 }
 
 Function* Context::Find(const std::string& name) const {
@@ -64,16 +62,14 @@ void Context::ImportBase() {
     DeclareFun("and", [](bool a, bool b) -> bool { return a && b; });
     DeclareFun("or", [](bool a, bool b) -> bool { return a || b; });
 
-#if 0
     DeclareSpecial(
-        "if", "Bool -> a -> a -> a", [](const List& l, Context& ctx) {
-            if (l.size() != 4) {
-                throw std::runtime_error("'if' expects 3 arguments");
-            }
-            return Eval<bool>(l[1], ctx) ? Eval<Polymorphic>(l[2], ctx)
-                                         : Eval<Polymorphic>(l[3], ctx);
+        "if",
+        "Bool -> a -> a -> a",
+        [](const std::array<std::pair<const Val*, Context*>, 3>& args) {
+            return Eval<bool>(*args[0].first, *args[0].second)
+                       ? Eval<Polymorphic>(*args[1].first, *args[1].second)
+                       : Eval<Polymorphic>(*args[2].first, *args[2].second);
         });
-#endif
 
     DeclareFun("return", "a -> a", [](const Polymorphic& x) { return x; });
     DeclareFun("const",

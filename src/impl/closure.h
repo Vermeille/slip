@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <utility>
 
 #include "ast.h"
@@ -72,10 +73,46 @@ class ClosureImpl : public ClosureBase {
     int filled_args_ = 0;
 };
 
+template <class F>
+class SpecialClosureImpl : public ClosureBase {
+    static constexpr int arity_ = std::tuple_size<
+        std::tuple_element_t<0, typename ManglerCaller<F>::args_type>>::value;
+
+   public:
+    virtual Polymorphic GetResult() const override {
+        if (filled_args_ != arity_) {
+            throw std::runtime_error(std::to_string(filled_args_) +
+                                     " arguments provided, but " +
+                                     std::to_string(arity_) + " expected");
+        }
+        return f_(args_);
+    }
+
+    void Apply(const Val& x, Context& ctx) override {
+        args_[filled_args_] = std::make_pair(&x, &ctx);
+        ++filled_args_;
+    }
+
+    bool IsTotallyApplied() const { return filled_args_ == arity_; }
+
+    SpecialClosureImpl(F&& f) : f_(std::move(f)) {}
+
+   private:
+    F f_;
+    std::array<std::pair<const Val*, Context*>, arity_> args_;
+    int filled_args_ = 0;
+};
+
 class Closure {
    public:
     template <class F>
-    Closure(F&& f) : base_(new ClosureImpl<std::decay_t<F>>(std::move(f))) {}
+    static Closure Get(F&& f) {
+        return Closure(new ClosureImpl<std::decay_t<F>>(std::move(f)));
+    }
+    template <class F>
+    static Closure GetSpecial(F&& f) {
+        return Closure(new SpecialClosureImpl<std::decay_t<F>>(std::move(f)));
+    }
 
     void Apply(const Val& x, Context& ctx) { return base_->Apply(x, ctx); }
 
@@ -87,6 +124,7 @@ class Closure {
     Polymorphic GetResult() const { return base_->GetResult(); }
 
    private:
+    Closure(ClosureBase* clo) : base_(clo) {}
     std::unique_ptr<ClosureBase> base_;
 };
 

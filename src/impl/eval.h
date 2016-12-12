@@ -89,6 +89,7 @@ bool Eval<bool>(const Val& v, Context& ctx) {
         return i->val();
     } else if (const List* i = boost::get<List>(&v)) {
         Closure fun = Eval<Closure>((*i)[0], ctx);
+        ApplyOnArgs(fun, *i, ctx);
         return fun.GetResult<bool>();
     }
     throw std::runtime_error("expected an int expression");

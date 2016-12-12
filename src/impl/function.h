@@ -35,21 +35,21 @@ class NormalFunc : public Function {
     NormalFunc(std::string name, F&& f);
     NormalFunc(std::string name, std::string type, F&& f);
 
-    Closure GetClosure() override { return Closure(fun_); }
+    Closure GetClosure() override { return Closure::Get(fun_); }
 
    private:
-    F&& fun_;
+    F fun_;
 };
 
-#if 0
+template <class F>
 class SpecialFun : public Function {
    public:
-    template <class F>
     SpecialFun(std::string name, std::string ty, F&& f)
         : Function(name, std::move(ty)), fun_(f) {}
 
+    Closure GetClosure() override { return Closure::GetSpecial(fun_); }
+
    private:
-    std::function<Polymorphic(const List&, Context&)> fun_;
+    F fun_;
 };
-#endif
 }  // namespace slip

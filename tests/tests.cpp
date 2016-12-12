@@ -103,16 +103,24 @@ void test_polymorphic_functions() {
               ctx);
 }
 
-int main() {
-    test_concrete_functions();
-    test_polymorphic_functions();
-    test_prototype();
-
+void test_types() {
     using namespace slip;
     Context ctx;
     ctx.ImportBase();
     CheckType("((+ 1) 2)", "Int", ctx);
     CheckType("((if true) 42)", "Int -> Int", ctx);
+}
+
+int main() {
+    test_concrete_functions();
+    test_polymorphic_functions();
+    test_prototype();
+    test_types();
+
+    using namespace slip;
+    Context ctx;
+    ctx.ImportBase();
+    expect_eq("((+ 1) 2)", "[[+:atom 1:int] 2:int]", 3, ctx);
 
     return 0;
 }

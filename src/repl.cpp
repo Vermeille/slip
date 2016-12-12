@@ -11,11 +11,9 @@ void ImportTypeFunctions(slip::Context& ctx) {
     ctx.DeclareSpecial(
         "!type",
         "a -> Polymorphic",
-        [](const slip::List& x, slip::Context& ctx) {
-            if (x.size() != 2) {
-                throw std::runtime_error("expected 1 arguments for !type");
-            }
-            return slip::TypeExpression(x[1], ctx);
+        [](const std::array<std::pair<const slip::Val*, slip::Context*>, 1>&
+               arg) {
+            return slip::TypeExpression(*arg[0].first, *arg[0].second);
         });
 
     ctx.DeclareFun("parsetype",
