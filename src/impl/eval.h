@@ -11,6 +11,9 @@
 namespace slip {
 void ApplyOnArgs(Closure& fun, const List& xs, Context& ctx) {
     for (size_t i = 1; i < xs.size(); ++i) {
+        if (fun.IsTotallyApplied()) {
+            fun = fun.GetResult<Closure>();
+        }
         fun.Apply(xs[i], ctx);
     }
 }
@@ -43,7 +46,11 @@ Closure Eval<Closure>(const Val& x, Context& ctx) {
     } else if (const List* l = boost::get<List>(&x)) {
         Closure fun = Eval<Closure>((*l)[0], ctx);
         ApplyOnArgs(fun, *l, ctx);
-        return fun;
+        if (fun.IsTotallyApplied()) {
+            return fun.GetResult<Closure>();
+        } else {
+            return fun;
+        }
     }
     throw std::runtime_error("Expected a closure");
 }
@@ -109,7 +116,11 @@ Polymorphic Eval<Polymorphic>(const Val& v, Context& ctx) {
         Polymorphic operator()(const List& i) const {
             Closure fun = Eval<Closure>(i[0], ctx_);
             ApplyOnArgs(fun, i, ctx_);
-            return fun.GetResult();
+            if (fun.IsTotallyApplied()) {
+                return fun.GetResult();
+            } else {
+                return Polymorphic(std::move(fun));
+            }
         }
     } vis(ctx);
     return boost::apply_visitor(vis, v);

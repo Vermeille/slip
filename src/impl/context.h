@@ -11,6 +11,9 @@
 namespace slip {
 class Context {
    public:
+    Context() = default;
+    Context(const Context&) = delete;
+
     template <class F>
     void DeclareFun(std::string name, F&& f);
 

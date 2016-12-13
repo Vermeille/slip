@@ -121,6 +121,22 @@ int main() {
     Context ctx;
     ctx.ImportBase();
     expect_eq("((+ 1) 2)", "[[+:atom 1:int] 2:int]", 3, ctx);
+    expect_eq("((const (+)) \"a\" 1 1)",
+              "[[const:atom [+:atom]] \"a\":str 1:int 1:int]",
+              2,
+              ctx);
+    expect_eq("((return (const (+))) \"a\" 1 1)",
+              "[[return:atom [const:atom [+:atom]]] \"a\":str 1:int 1:int]",
+              2,
+              ctx);
+    expect_eq("((if (< 1 2) (+) (*)) 2 3)",
+              "[[if:atom [<:atom 1:int 2:int] [+:atom] [*:atom]] 2:int 3:int]",
+              5,
+              ctx);
+    expect_eq("((if (< 3 2) (+) (*)) 2 3)",
+              "[[if:atom [<:atom 3:int 2:int] [+:atom] [*:atom]] 2:int 3:int]",
+              6,
+              ctx);
 
     return 0;
 }

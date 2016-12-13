@@ -69,7 +69,8 @@ class Polymorphic {
     template <class T>
     std::enable_if_t<!std::is_pointer<T>::value, T> as() const;
 
-    Polymorphic(const Polymorphic& x) : value_(x.value_->Copy()) {}
+    Polymorphic(const Polymorphic& x)
+        : value_(x.value_ ? x.value_->Copy() : nullptr) {}
 
     Polymorphic(Polymorphic&& x) : value_(std::move(x.value_)) {}
 
@@ -82,6 +83,7 @@ class Polymorphic {
        public:
         virtual PolymorphBase* Copy() const = 0;
         virtual std::string Show() const = 0;
+        virtual ~PolymorphBase() {}
     };
 
     template <class T>

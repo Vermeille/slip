@@ -35,7 +35,7 @@ class NormalFunc : public Function {
     NormalFunc(std::string name, F&& f);
     NormalFunc(std::string name, std::string type, F&& f);
 
-    Closure GetClosure() override { return Closure::Get(fun_); }
+    Closure GetClosure() override { return Closure::Get(mangled_name(), fun_); }
 
    private:
     F fun_;
@@ -47,7 +47,9 @@ class SpecialFun : public Function {
     SpecialFun(std::string name, std::string ty, F&& f)
         : Function(name, std::move(ty)), fun_(f) {}
 
-    Closure GetClosure() override { return Closure::GetSpecial(fun_); }
+    Closure GetClosure() override {
+        return Closure::GetSpecial(mangled_name(), fun_);
+    }
 
    private:
     F fun_;
