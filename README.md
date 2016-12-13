@@ -59,6 +59,21 @@ in the script that it sends to the server. Etc.
     Make sure to explicitly type all the functions having a Polymorphic
     argument. Use a ML-like format.
 
+    You can also declare function with special evaluation rules by making them
+    take an array of pair of const Val* and Context* of any size. It's on you
+    to call Eval<>() on the arguments as you wish.
+
+    ```c++
+    ctx.DeclareSpecial(
+        "if",
+        "Bool -> a -> a -> a",
+        [](const std::array<std::pair<const Val*, Context*>, 3>& args) {
+            return Eval<bool>(*args[0].first, *args[0].second)
+                       ? Eval<Polymorphic>(*args[1].first, *args[1].second)
+                       : Eval<Polymorphic>(*args[2].first, *args[2].second);
+        });
+    ```
+
 5. Have your script coming in somewhere.
 
     ```c++
