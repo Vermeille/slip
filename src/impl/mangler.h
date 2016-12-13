@@ -15,6 +15,11 @@ struct GetTypeId<int> {
 };
 
 template <>
+struct GetTypeId<void> {
+    static std::string type() { return "Void"; }
+};
+
+template <>
 struct GetTypeId<bool> {
     static std::string type() { return "Bool"; }
 };
@@ -60,6 +65,15 @@ struct ManglerCaller<R (*)(Args...)> {
     static constexpr int arity = sizeof...(Args);
 };
 
+template <class R>
+struct ManglerCaller<R (*)()> {
+    static const std::string Mangle() { return Result(); }
+    static const std::string Result() { return GetTypeId<R>::type(); }
+    typedef R result_type;
+    typedef std::tuple<> args_type;
+    static constexpr int arity = 0;
+};
+
 template <class R, class C, class... Args>
 struct ManglerCaller<R (C::*)(Args...) const> {
     static const std::string Mangle() {
@@ -69,5 +83,14 @@ struct ManglerCaller<R (C::*)(Args...) const> {
     typedef R result_type;
     typedef std::tuple<std::decay_t<Args>...> args_type;
     static constexpr int arity = sizeof...(Args);
+};
+
+template <class R, class C>
+struct ManglerCaller<R (C::*)() const> {
+    static const std::string Mangle() { return Result(); }
+    static const std::string Result() { return GetTypeId<R>::type(); }
+    typedef R result_type;
+    typedef std::tuple<> args_type;
+    static constexpr int arity = 0;
 };
 }  // namespace slip

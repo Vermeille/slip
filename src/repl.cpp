@@ -30,6 +30,10 @@ void ImportTypeFunctions(slip::Context& ctx) {
                        return type.Substitue(slip::LowerCaseIdToNbr(namevar),
                                              arg);
                    });
+    ctx.DeclareFun("help", [&ctx] {
+        ctx.Dump();
+        return 0;
+    });
 }
 
 int main() {
